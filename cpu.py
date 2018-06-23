@@ -3,10 +3,13 @@ import memory as m
 A = 0
 F = 1
 B = 2
+BC = 2
 C = 3
 D = 4
+DE = 4
 E = 5
 H = 6
+HL = 6
 L = 7
 
 regs = [0, 0, 0, 0, 0, 0, 0, 0]
@@ -44,3 +47,18 @@ def writeRegs(reg, value):
 
     regs[reg] = msbits
     regs[reg+1] = lsbits
+
+def readRegs(reg):
+    assert reg % 2 == 0 and reg < 8
+
+    msbits = regs[reg]
+    lsbits = regs[reg+1]
+
+    value = (msbits << 8) + lsbits
+
+    return value
+
+def readReg(reg):
+    assert reg < 8
+
+    return regs[reg]
