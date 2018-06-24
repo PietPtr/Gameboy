@@ -12,6 +12,7 @@ H = 6
 HL = 6
 L = 7
 
+# TODO: fix dat SP gewoon een register word...
 regs = [0, 0, 0, 0, 0, 0, 0, 0]
 
 pc = 256
@@ -39,10 +40,12 @@ def run():
             dec8(B)
         elif op == "0x6":
             loadi8(B)
-
+        elif op == "0x7":
+            rlca()
         elif op == "0x8":
             loadmemtosp()
-
+        elif op == "0x9":
+            add16s(HL, BC)
         elif op == "0xa":
             loadto(A, (BC))
         elif op == "0xb":
@@ -67,6 +70,8 @@ def run():
         elif op == "0x16":
             loadi8(D)
 
+        elif op == "0x19":
+            add16s(HL, DE)
         elif op == "0x1a":
             loadto(A, (DE))
         elif op == "0x1b":
@@ -89,6 +94,9 @@ def run():
             dec8(H)
         elif op == "0x26":
             loadi8(H)
+        
+        elif op == "0x29":
+            add16s(HL, HL)
 
         elif op == "0x2b":
             dec16(HL)
@@ -110,6 +118,7 @@ def run():
             decat((HL))
         elif op == "0x36":
             loadiat((HL))
+
 
         elif op == "0x3b":
             decsp()
@@ -248,8 +257,24 @@ def run():
             loadto(A, (HL))
         elif op == "0x7f":
             load(A, A)
+        elif op == "0x80":
+            add8s(A, B)
+        elif op == "0x81":
+            add8s(A, C) 
+        elif op == "0x82":
+            add8s(A, D) 
+        elif op == "0x83":
+            add8s(A, E) 
+        elif op == "0x84":
+            add8s(A, H) 
+        elif op == "0x85":
+            add8s(A, L)  
+
+        elif op == "0x87":
+            add8s(A, A) 
+
         else:
-            update(1, 4)
+            nop()
 
 
 
@@ -296,6 +321,14 @@ def loadmemtosp():
 
     update(3, 20, newsp=value)
 
+def rlca():
+    a = readReg(A)
+    bit7 = (a >> 7) & 1
+    a = ((a << 1) & 255) | (a >> 7)
+    writeReg(A, a)
+
+    update(1, 4, zerocheck=0, n=0, h=0, c=bit7)
+
 def inc8(reg):
     value = readReg(reg) + 1
     writeReg(reg, value)
@@ -319,6 +352,26 @@ def dec16(regs):
     writeRegs(regs, value)
 
     update(1, 8)
+
+def add8s(reg1, reg2):
+    value1 = readReg(reg1)
+    value2 = readReg(reg2)
+    newv = value1 + value2
+
+    writeReg(reg1, value1 + value2)
+
+    # H flag likely bullshit here too
+    update(1, 4, zerocheck=(newv & 255), n=0, h=((newv >> 4) & 1), c=(newv >> 8))
+
+def add16s(regs1, regs2):
+    value1 = readRegs(regs1)
+    value2 = readRegs(regs2)
+    newv = value1 + value2
+
+    writeRegs(regs1, newv)
+
+    # H flag likely bullshit
+    update(1, 8, n=0, h=(int(newv > 2**11)), c=(newv >> 16))
 
 def decsp():
     global sp
@@ -368,7 +421,7 @@ def loadto(reg, regs):
 def update(pcinc, cycles, zerocheck=-1, n=-1, h=-1, c=-1, newsp=-1):
     global pc, cycle, sp
 
-    print(pc, cycle, bin(regs[F]), sp)
+    # print(pc, cycle, bin(regs[F]), sp)
 
     if zerocheck != -1:
         zero(zerocheck)
@@ -381,7 +434,8 @@ def update(pcinc, cycles, zerocheck=-1, n=-1, h=-1, c=-1, newsp=-1):
     pc = (pc + pcinc) & 0b1111111111111111
     cycle += cycles
 
-    print(pc, cycle, bin(regs[F]), sp)
+    # print(pc, cycle, bin(regs[F]), sp)
+    printState()
 
 def zero(value):
     if value == 0:
@@ -423,11 +477,29 @@ def setFlags(z=-1, n=-1, h=-1, c=-1):
 def to16bitnum(lsbits, msbits):
     return (msbits << 8) + lsbits
 
+def printState():
+    printRegs()
+    printFlags()
+
+def printFlags():
+    f = readReg(F)
+    print("Flags: z=" + str((f >> 7) & 1), end=", ")
+    print("n=" + str((f >> 6) & 1), end=", ")
+    print("h=" + str((f >> 5) & 1), end=", ")
+    print("c=" + str((f >> 4) & 1))
 
 def printRegs():
     names = "AFBCDEHL"
+    print("Registers: ", end="")
     for i in range(0, L+1):
-        print(str(names[i]) + ": ", regs[i], hex(regs[i]))
+        print(str(names[i]) + ":", "{0:#0{1}x}, ".format(regs[i], 4), end="")
+    print()
+
+    print("Double registers: ", end="") 
+    names = ["", "BC", "DE", "HL"]
+    for i in range(1, 4):
+        print(str(names[i]) + ":", "{0:#0{1}x}, ".format(readRegs(i*2), 6), end="")
+    print()
 
 def writeA(value):
     global A
