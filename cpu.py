@@ -23,32 +23,63 @@ def run():
 
     while True:
         op = hex(m.read(pc))
-        print((op))
+        print(pc, op)
         # input()
         if op == "0x0":
             nop()
         elif op == "0x1":
-            loadi(BC)
-
+            loadi16(BC)
+        elif op == "0x2":
+            loadfrom((BC), A)
         elif op == "0x3":
             inc16(BC)
         elif op == "0x4":
             inc8(B)
         elif op == "0x5":
             dec8(B)
+        elif op == "0x6":
+            loadi8(B)
+
+        elif op == "0x8":
+            loadmemtosp()
+
+        elif op == "0xa":
+            loadto(A, (BC))
+        elif op == "0xb":
+            dec16(BC)
+        elif op == "0xc":
+            inc8(C)
+        elif op == "0xd":
+            dec8(C)
+        elif op == "0xe":
+            loadi8(C)
 
         elif op == "0x11":
-            loadi(DE)
-
+            loadi16(DE)
+        elif op == "0x12":
+            loadfrom((DE), A)
         elif op == "0x13":
             inc16(DE)
         elif op == "0x14":
             inc8(D)
         elif op == "0x15":
             dec8(D)
+        elif op == "0x16":
+            loadi8(D)
+
+        elif op == "0x1a":
+            loadto(A, (DE))
+        elif op == "0x1b":
+            dec16(DE)
+        elif op == "0x1c":
+            inc8(E)
+        elif op == "0x1d":
+            dec8(E)
+        elif op == "0x1e":
+            loadi8(E)
 
         elif op == "0x21":
-            loadi(HL)
+            loadi16(HL)
 
         elif op == "0x23":
             inc16(HL)
@@ -56,7 +87,17 @@ def run():
             inc8(H)
         elif op == "0x25":
             dec8(H)
+        elif op == "0x26":
+            loadi8(H)
 
+        elif op == "0x2b":
+            dec16(HL)
+        elif op == "0x2c":
+            inc8(L)
+        elif op == "0x2d":
+            dec8(L)
+        elif op == "0x2e":
+            loadi8(L)
 
         elif op == "0x31":
             loadisp()
@@ -64,9 +105,20 @@ def run():
         elif op == "0x33":
             incsp()
         elif op == "0x34":
-            incat(HL)
+            incat((HL))
         elif op == "0x35":
-            decat(HL)
+            decat((HL))
+        elif op == "0x36":
+            loadiat((HL))
+
+        elif op == "0x3b":
+            decsp()
+        elif op == "0x3c":
+            inc8(A)
+        elif op == "0x3d":
+            dec8(A)
+        elif op == "0x3e":
+            loadi8(A)
 
         elif op == "0x40":
             load(B, B)
@@ -164,8 +216,40 @@ def run():
         #     pass # TODO
         elif op == "0x6f":
             load(L, A)
+        elif op == "0x70":
+            loadfrom((HL), B)
+        elif op == "0x71":
+            loadfrom((HL), C)
+        elif op == "0x72":
+            loadfrom((HL), D)
+        elif op == "0x73":
+            loadfrom((HL), E)
+        elif op == "0x74":
+            loadfrom((HL), H)
+        elif op == "0x75":
+            loadfrom((HL), L)
+        # elif op == "0x76":
+        # HALT
+        elif op == "0x77":
+            loadfrom((HL), A)
+        elif op == "0x78":
+            load(A, B)
+        elif op == "0x79":
+            load(A, C)
+        elif op == "0x7a":
+            load(A, D)
+        elif op == "0x7b":
+            load(A, E)
+        elif op == "0x7c":
+            load(A, H)
+        elif op == "0x7d":
+            load(A, L)
+        elif op == "0x7e":
+            loadto(A, (HL))
+        elif op == "0x7f":
+            load(A, A)
         else:
-            pc += 1
+            update(1, 4)
 
 
 
@@ -182,16 +266,35 @@ def load(toReg, fromReg):
 
     update(1, 4)
 
-def loadi(toReg):
+def loadi8(toReg):
+    value = m.read(pc+1)
+    writeReg(toReg, value)
+
+    update(2, 8)
+
+def loadi16(toRegs):
     value = (m.read(pc+2) << 8) + (m.read(pc+1))
-    writeRegs(toReg, value)
+    writeRegs(toRegs, value)
 
     update(3, 12)
+
+def loadiat(regs):
+    addr = readRegs(regs)
+    value = m.read(pc+1)
+    m.write(addr, value)
+
+    update(2, 12)
 
 def loadisp():
     value = (m.read(pc+2) << 8) + (m.read(pc+1))
 
     update(3, 12, newsp=value)
+
+def loadmemtosp():
+    addr = ((m.read(pc+2)) << 8) + (m.read(pc+1))
+    value = m.read(addr)
+
+    update(3, 20, newsp=value)
 
 def inc8(reg):
     value = readReg(reg) + 1
@@ -205,35 +308,58 @@ def dec8(reg):
 
     update(1, 4, zerocheck=value, n=1, h=((value >> 4) & 1))
 
-def inc16(reg):
-    value = readRegs(reg) + 1
-    writeRegs(reg, value)
+def inc16(regs):
+    value = readRegs(regs) + 1
+    writeRegs(regs, value)
 
     update(1, 8)
 
-def dec16(reg):
-    value = readRegs(reg) - 1
-    writeRegs(reg, value)
+def dec16(regs):
+    value = readRegs(regs) - 1
+    writeRegs(regs, value)
 
     update(1, 8)
 
-def incat(reg):
-    addr = readRegs(reg)
+def decsp():
+    global sp
+    update(1, 8, newsp=sp-1)
+
+def incsp():
+    global sp
+    update(1, 8, newsp=sp+1)
+
+def incat(regs):
+    addr = readRegs(regs)
     value = m.read(addr) + 1
     m.write(addr, value)
 
     update(1, 12, zerocheck=value, n=0, h=((value >> 4) & 1))
 
-def decat(reg):
-    addr = readRegs(reg)
+# Decrements the value stored at the address contained by the register
+# Requires a double register
+def decat(regs):
+    addr = readRegs(regs)
     value = m.read(addr) - 1
     m.write(addr, value)
 
     update(1, 12, zerocheck=value, n=1, h=((value >> 4) & 1))
 
-def incsp():
-    global sp
-    update(1, 8, newsp=sp+1)
+# Loads the value stored at the address contained by the register
+# Requires a double register for specifying address
+def loadfrom(regs, reg):
+    addr = readRegs(regs)
+    value = m.read(addr)
+    writeReg(reg, value)
+
+    update(1, 8)
+
+def loadto(reg, regs):
+    addr = readRegs(regs)
+    value = readReg(reg)
+    m.write(addr, value)
+
+    update(1, 8)
+
 
 # -----------------
 # ---- Helpers ----
@@ -303,8 +429,12 @@ def printRegs():
     for i in range(0, L+1):
         print(str(names[i]) + ": ", regs[i], hex(regs[i]))
 
+def writeA(value):
+    global A
+    regs[A] = value
+
 def writeReg(reg, value):
-    assert reg >= 2
+    assert reg < 8
 
     value = value & 255
 
