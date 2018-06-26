@@ -11,12 +11,13 @@ E = 5
 H = 6
 HL = 6
 L = 7
+SP = 8
 
 # TODO: fix dat SP gewoon een register word...
-regs = [0, 0, 0, 0, 0, 0, 0, 0]
+regs = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 
 pc = 256
-sp = 0
+# sp = 0
 cycle = 0
 
 def run():
@@ -43,7 +44,7 @@ def run():
         elif op == "0x7":
             rlca()
         elif op == "0x8":
-            loadmemtosp()
+            loadi16(SP)
         elif op == "0x9":
             add16s(HL, BC)
         elif op == "0xa":
@@ -108,10 +109,9 @@ def run():
             loadi8(L)
 
         elif op == "0x31":
-            loadisp()
-
+            loadi16(SP)
         elif op == "0x33":
-            incsp()
+            inc16(SP)
         elif op == "0x34":
             incat((HL))
         elif op == "0x35":
@@ -121,7 +121,7 @@ def run():
 
 
         elif op == "0x3b":
-            decsp()
+            dec16(SP)
         elif op == "0x3c":
             inc8(A)
         elif op == "0x3d":
@@ -272,7 +272,23 @@ def run():
 
         elif op == "0x87":
             add8s(A, A) 
+        elif op == "0x88":
+            adc(A, B)
+        elif op == "0x89":
+            adc(A, C)
+        elif op == "0x8a":
+            adc(A, D)
+        elif op == "0x8b":
+            adc(A, E)
+        elif op == "0x8c":
+            adc(A, H)
+        elif op == "0x8d":
+            adc(A, L)
 
+        elif op == "0x8f":
+            adc(A, A)
+        elif op == "0x90":
+            subA(B)
         else:
             nop()
 
@@ -310,16 +326,16 @@ def loadiat(regs):
 
     update(2, 12)
 
-def loadisp():
-    value = (m.read(pc+2) << 8) + (m.read(pc+1))
+#def loadisp():
+#    value = (m.read(pc+2) << 8) + (m.read(pc+1))
+#
+#    update(3, 12, newsp=value)
 
-    update(3, 12, newsp=value)
-
-def loadmemtosp():
-    addr = ((m.read(pc+2)) << 8) + (m.read(pc+1))
-    value = m.read(addr)
-
-    update(3, 20, newsp=value)
+#def loadmemtosp():
+#    addr = ((m.read(pc+2)) << 8) + (m.read(pc+1))
+#    value = m.read(addr)
+#
+#    update(3, 20, newsp=value)
 
 def rlca():
     a = readReg(A)
@@ -363,6 +379,23 @@ def add8s(reg1, reg2):
     # H flag likely bullshit here too
     update(1, 4, zerocheck=(newv & 255), n=0, h=((newv >> 4) & 1), c=(newv >> 8))
 
+def subA(reg2):
+    v1 = readReg(A)
+    v2 = readReg(reg2)
+    newv = v1 - v2
+    
+    writeReg(reg1, newv)
+
+    update(1, 4, zerocheck=(newv & 255), n=1, h=(((newv & 255) >> 4) & 1), c=(newv >> 8)) 
+
+def adc(reg1, reg2):
+    v1 = readReg(reg1)
+    v2 = readReg(reg2)
+    newv = v1 + v2 + c()
+    writeReg(reg1, newv)
+
+    update(1, 4, zerocheck=newv, n=0, h=((newv >> 4) & 1), c=(newv >> 8))
+
 def add16s(regs1, regs2):
     value1 = readRegs(regs1)
     value2 = readRegs(regs2)
@@ -373,13 +406,13 @@ def add16s(regs1, regs2):
     # H flag likely bullshit
     update(1, 8, n=0, h=(int(newv > 2**11)), c=(newv >> 16))
 
-def decsp():
-    global sp
-    update(1, 8, newsp=sp-1)
-
-def incsp():
-    global sp
-    update(1, 8, newsp=sp+1)
+#def decsp():
+#    global sp
+#    update(1, 8, newsp=sp-1)
+#
+#def incsp():
+#    global sp
+#    update(1, 8, newsp=sp+1)
 
 def incat(regs):
     addr = readRegs(regs)
@@ -418,16 +451,16 @@ def loadto(reg, regs):
 # ---- Helpers ----
 # -----------------
 
-def update(pcinc, cycles, zerocheck=-1, n=-1, h=-1, c=-1, newsp=-1):
-    global pc, cycle, sp
+def update(pcinc, cycles, zerocheck=-1, n=-1, h=-1, c=-1):
+    global pc, cycle
 
     # print(pc, cycle, bin(regs[F]), sp)
 
     if zerocheck != -1:
         zero(zerocheck)
 
-    if newsp != -1:
-        sp = newsp & 0b1111111111111111
+    #if newsp != -1:
+    #    sp = newsp & 0b1111111111111111
 
     setFlags(n=n, h=h, c=c)
 
@@ -474,6 +507,18 @@ def setFlags(z=-1, n=-1, h=-1, c=-1):
 
     regs[F] = f
 
+def z():
+    return (readReg(F) >> 7) & 1
+
+def n():
+    return (readReg(F) >> 6) & 1
+
+def h():
+    return (readReg(F) >> 5) & 1
+
+def c():
+    return (readReg(F) >> 4) & 1
+
 def to16bitnum(lsbits, msbits):
     return (msbits << 8) + lsbits
 
@@ -496,8 +541,8 @@ def printRegs():
     print()
 
     print("Double registers: ", end="") 
-    names = ["", "BC", "DE", "HL"]
-    for i in range(1, 4):
+    names = ["", "BC", "DE", "HL", "SP"]
+    for i in range(1, 5):
         print(str(names[i]) + ":", "{0:#0{1}x}, ".format(readRegs(i*2), 6), end="")
     print()
 
