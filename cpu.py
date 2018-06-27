@@ -330,7 +330,54 @@ def run():
             alu8(sbc, m.read(readRegs(HL)), 8)
         elif op == "0x9f":
             alu8(sbc, readReg(A), 4)
-
+        elif op == "0xa0":
+            alu8(and_, readReg(B), 4)
+        elif op == "0xa1":
+            alu8(and_, readReg(C), 4)
+        elif op == "0xa2":
+            alu8(and_, readReg(D), 4)
+        elif op == "0xa3":
+            alu8(and_, readReg(E), 4)
+        elif op == "0xa4":
+            alu8(and_, readReg(H), 4)
+        elif op == "0xa5":
+            alu8(and_, readReg(L), 4)
+        elif op == "0xa6":
+            alu8(and_, m.read(readRegs(HL)), 8)
+        elif op == "0xa7":
+            alu8(and_, readReg(A), 4)
+        elif op == "0xa8":
+            alu8(xor, readReg(B), 4)
+        elif op == "0xa9":
+            alu8(xor, readReg(C), 4)
+        elif op == "0xaa":
+            alu8(xor, readReg(D), 4)
+        elif op == "0xab":
+            alu8(xor, readReg(E), 4)
+        elif op == "0xac":
+            alu8(xor, readReg(H), 4)
+        elif op == "0xad":
+            alu8(xor, readReg(L), 4)
+        elif op == "0xae":
+            alu8(xor, m.read(readRegs(HL)), 8)
+        elif op == "0xaf":
+            alu8(xor, readReg(A), 4)
+        elif op == "0xb0":
+            alu8(or_, readReg(B), 4)
+        elif op == "0xb1":
+            alu8(or_, readReg(C), 4)
+        elif op == "0xb2":
+            alu8(or_, readReg(D), 4)
+        elif op == "0xb3":
+            alu8(or_, readReg(E), 4)
+        elif op == "0xb4":
+            alu8(or_, readReg(H), 4)
+        elif op == "0xb5":
+            alu8(or_, readReg(L), 4)
+        elif op == "0xb6":
+            alu8(or_, m.read(readRegs(HL)), 8)
+        elif op == "0xb7":
+            alu8(or_, readReg(A), 4)
         else:
             nop()
 
@@ -499,22 +546,19 @@ def sbc(a, b, cyc):
 def and_(a, b, cyc):
     newv = a & b
     update(1, cyc, zerocheck=newv, n=0, h=1, c=0)
+    return newv
 
-def xor_(a, b, cyc):
+def xor(a, b, cyc):
     newv = a ^ b
     update(1, cyc, zerocheck=newv, n=0, h=0, c=0)
+    return newv
 
 def or_(a, b, cyc):
     newv = a | b
     update(1, cyc, zerocheck=newv, n=0, h=0, c=0)
+    return newv
 
-#def decsp():
-#    global sp
-#    update(1, 8, newsp=sp-1)
-#
-#def incsp():
-#    global sp
-#    update(1, 8, newsp=sp+1)
+
 
 def incat(regs):
     addr = readRegs(regs)
