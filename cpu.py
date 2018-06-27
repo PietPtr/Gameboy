@@ -70,6 +70,8 @@ def run():
             dec8(D)
         elif op == "0x16":
             loadi8(D)
+        elif op == "0x17":
+            rla()
 
         elif op == "0x19":
             add16s(HL, DE)
@@ -269,7 +271,8 @@ def run():
             add8s(A, H) 
         elif op == "0x85":
             add8s(A, L)  
-
+        elif op == "0x86":
+            addmem()
         elif op == "0x87":
             add8s(A, A) 
         elif op == "0x88":
@@ -343,7 +346,16 @@ def rlca():
     a = ((a << 1) & 255) | (a >> 7)
     writeReg(A, a)
 
-    update(1, 4, zerocheck=0, n=0, h=0, c=bit7)
+    update(1, 4, zerocheck=a, n=0, h=0, c=bit7)
+
+def rla():
+    a = readReg(A)
+    bit7 = (a >> 7) & 1
+    print(bin(a), bit7)
+    a = (((a << 1) | c()) & 255)
+    writeReg(A, a)
+    
+    update(1, 4, zerocheck=a, n=0, h=0, c=bit7)
 
 def inc8(reg):
     value = readReg(reg) + 1
@@ -379,12 +391,22 @@ def add8s(reg1, reg2):
     # H flag likely bullshit here too
     update(1, 4, zerocheck=(newv & 255), n=0, h=((newv >> 4) & 1), c=(newv >> 8))
 
+# ADD A,(HL)
+def addmem():
+    value1 = m.read(readRegs(HL))
+    value2 = readReg(A)
+    newv = value1 + value2
+    
+    writeReg(A, newv)
+
+    update(1, 8, zerocheck=(newv & 255), n=0, h=((newv >> 4) & 1), c=(newv >> 8))
+
 def subA(reg2):
     v1 = readReg(A)
     v2 = readReg(reg2)
     newv = v1 - v2
     
-    writeReg(reg1, newv)
+    writeReg(A, newv)
 
     update(1, 4, zerocheck=(newv & 255), n=1, h=(((newv & 255) >> 4) & 1), c=(newv >> 8)) 
 
@@ -504,7 +526,7 @@ def setFlags(z=-1, n=-1, h=-1, c=-1):
     if c == 1:
         f = f | (0b00010000)
     elif c == 0:
-        f = f | (0b11100000)
+        f = f & (0b11100000)
 
     regs[F] = f
 
