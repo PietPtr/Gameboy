@@ -32,7 +32,7 @@ def run():
         elif op == "0x1":
             loadi16(BC)
         elif op == "0x2":
-            loadfrom((BC), A)
+            loadto((BC), A)
         elif op == "0x3":
             inc16(BC)
         elif op == "0x4":
@@ -48,7 +48,7 @@ def run():
         elif op == "0x9":
             add16s(HL, BC)
         elif op == "0xa":
-            loadto(A, (BC))
+            loadfrom(A, (BC))
         elif op == "0xb":
             dec16(BC)
         elif op == "0xc":
@@ -61,7 +61,7 @@ def run():
         elif op == "0x11":
             loadi16(DE)
         elif op == "0x12":
-            loadfrom((DE), A)
+            loadto((DE), A)
         elif op == "0x13":
             inc16(DE)
         elif op == "0x14":
@@ -74,7 +74,7 @@ def run():
         elif op == "0x19":
             add16s(HL, DE)
         elif op == "0x1a":
-            loadto(A, (DE))
+            loadfrom(A, (DE))
         elif op == "0x1b":
             dec16(DE)
         elif op == "0x1c":
@@ -142,7 +142,7 @@ def run():
         elif op == "0x45":
             load(B, L)
         elif op == "0x46":
-            load(B, L)
+            loadfrom(B, (HL))
         elif op == "0x47":
             load(B, A)
         elif op == "0x48":
@@ -157,8 +157,8 @@ def run():
             load(C, H)
         elif op == "0x4d":
             load(C, L)
-        # elif op == "0x4e":
-        #     pass # TODO
+        elif op == "0x4e":
+            loadfrom(C, (HL))
         elif op == "0x4f":
             load(C, A)
         elif op == "0x50":
@@ -173,8 +173,8 @@ def run():
             load(D, H)
         elif op == "0x55":
             load(D, L)
-        # elif op == "0x56":
-        #     pass # TODO
+        elif op == "0x56":
+            loadfrom(B, (HL)) 
         elif op == "0x57":
             load(D, A)
         elif op == "0x58":
@@ -189,8 +189,8 @@ def run():
             load(E, H)
         elif op == "0x5d":
             load(E, L)
-        # elif op == "0x5e":
-        #     pass # TODO
+        elif op == "0x5e":
+            loadfrom(E, (HL))
         elif op == "0x5f":
             load(E, A)
         elif op == "0x60":
@@ -205,8 +205,8 @@ def run():
             load(H, H)
         elif op == "0x65":
             load(H, L)
-        # elif op == "0x66":
-        #     pass # TODO
+        elif op == "0x66":
+            loadfrom(H, (HL))
         elif op == "0x67":
             load(H, A)
         elif op == "0x68":
@@ -221,26 +221,26 @@ def run():
             load(L, H)
         elif op == "0x6d":
             load(L, L)
-        # elif op == "0x6e":
-        #     pass # TODO
+        elif op == "0x6e":
+            loadfrom(L, (HL)) 
         elif op == "0x6f":
             load(L, A)
         elif op == "0x70":
-            loadfrom((HL), B)
+            loadto((HL), B)
         elif op == "0x71":
-            loadfrom((HL), C)
+            loadto((HL), C)
         elif op == "0x72":
-            loadfrom((HL), D)
+            loadto((HL), D)
         elif op == "0x73":
-            loadfrom((HL), E)
+            loadto((HL), E)
         elif op == "0x74":
-            loadfrom((HL), H)
+            loadto((HL), H)
         elif op == "0x75":
-            loadfrom((HL), L)
+            loadto((HL), L)
         # elif op == "0x76":
         # HALT
         elif op == "0x77":
-            loadfrom((HL), A)
+            loadto((HL), A)
         elif op == "0x78":
             load(A, B)
         elif op == "0x79":
@@ -254,7 +254,7 @@ def run():
         elif op == "0x7d":
             load(A, L)
         elif op == "0x7e":
-            loadto(A, (HL))
+            loadfrom(A, (HL))
         elif op == "0x7f":
             load(A, A)
         elif op == "0x80":
@@ -432,14 +432,15 @@ def decat(regs):
 
 # Loads the value stored at the address contained by the register
 # Requires a double register for specifying address
-def loadfrom(regs, reg):
+# r = (HL)    LD B,(HL)
+def loadfrom(reg, regs):
     addr = readRegs(regs)
     value = m.read(addr)
     writeReg(reg, value)
 
     update(1, 8)
-
-def loadto(reg, regs):
+# (HL) = r   LD (HL),B
+def loadto(regs, reg):
     addr = readRegs(regs)
     value = readReg(reg)
     m.write(addr, value)
