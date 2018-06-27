@@ -12,6 +12,7 @@ def loadROM(data):
 
 def read(addr):
     # TODO: add memory mapped crap like IO
+    addr = addr & 0xFFFF
     return memory[addr]
 
 def write(addr, value):
