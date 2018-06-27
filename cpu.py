@@ -13,7 +13,6 @@ HL = 6
 L = 7
 SP = 8
 
-# TODO: fix dat SP gewoon een register word...
 regs = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 
 pc = 256
@@ -95,7 +94,7 @@ def run():
             dec8(H)
         elif op == "0x26":
             loadi8(H)
-        
+
         elif op == "0x29":
             add16s(HL, HL)
 
@@ -260,18 +259,18 @@ def run():
         elif op == "0x80":
             add8s(A, B)
         elif op == "0x81":
-            add8s(A, C) 
+            add8s(A, C)
         elif op == "0x82":
-            add8s(A, D) 
+            add8s(A, D)
         elif op == "0x83":
-            add8s(A, E) 
+            add8s(A, E)
         elif op == "0x84":
-            add8s(A, H) 
+            add8s(A, H)
         elif op == "0x85":
-            add8s(A, L)  
+            add8s(A, L)
 
         elif op == "0x87":
-            add8s(A, A) 
+            add8s(A, A)
         elif op == "0x88":
             adc(A, B)
         elif op == "0x89":
@@ -289,11 +288,22 @@ def run():
             adc(A, A)
         elif op == "0x90":
             subA(B)
+        elif op == "0x91":
+            subA(C)
+        elif op == "0x92":
+            subA(D)
+        elif op == "0x93":
+            subA(E)
+        elif op == "0x94":
+            subA(H)
+        elif op == "0x95":
+            subA(L)
+
+        elif op == "0x97":
+            subA(A)
+
         else:
             nop()
-
-
-
 
 # -------------
 # ---- Ops ----
@@ -369,6 +379,7 @@ def dec16(regs):
 
     update(1, 8)
 
+# Should actually by addA, like subA only register A can be added to.
 def add8s(reg1, reg2):
     value1 = readReg(reg1)
     value2 = readReg(reg2)
@@ -383,11 +394,12 @@ def subA(reg2):
     v1 = readReg(A)
     v2 = readReg(reg2)
     newv = v1 - v2
-    
-    writeReg(reg1, newv)
 
-    update(1, 4, zerocheck=(newv & 255), n=1, h=(((newv & 255) >> 4) & 1), c=(newv >> 8)) 
+    writeReg(A, newv)
 
+    update(1, 4, zerocheck=(newv & 255), n=1, h=((~newv >> 4) & 1), c=(~(newv >> 8) & 1))
+
+# same as with add
 def adc(reg1, reg2):
     v1 = readReg(reg1)
     v2 = readReg(reg2)
@@ -395,6 +407,15 @@ def adc(reg1, reg2):
     writeReg(reg1, newv)
 
     update(1, 4, zerocheck=newv, n=0, h=((newv >> 4) & 1), c=(newv >> 8))
+
+def sbc(reg2):
+    v1 = readReg(A)
+    v2 = readReg(reg2)
+    newv = v1 - v2 - c()
+    writeReg(A, newv)
+
+    update(1, 4, zerocheck=newv, n=1, h=((~newv >> 4) & 1), c=(~(newv >> 8) & 1))
+
 
 def add16s(regs1, regs2):
     value1 = readRegs(regs1)
@@ -540,7 +561,7 @@ def printRegs():
         print(str(names[i]) + ":", "{0:#0{1}x}, ".format(regs[i], 4), end="")
     print()
 
-    print("Double registers: ", end="") 
+    print("Double registers: ", end="")
     names = ["", "BC", "DE", "HL", "SP"]
     for i in range(1, 5):
         print(str(names[i]) + ":", "{0:#0{1}x}, ".format(readRegs(i*2), 6), end="")
