@@ -57,6 +57,8 @@ def run():
             dec8(C)
         elif op == "0xe":
             loadi8(C)
+        elif op == "0xf":
+            rrca()
 
         elif op == "0x11":
             loadi16(DE)
@@ -351,11 +353,18 @@ def rlca():
 def rla():
     a = readReg(A)
     bit7 = (a >> 7) & 1
-    print(bin(a), bit7)
     a = (((a << 1) | c()) & 255)
     writeReg(A, a)
     
     update(1, 4, zerocheck=a, n=0, h=0, c=bit7)
+
+def rrca():
+    a = readReg(A)
+    bit0 = a & 1
+    a = (a >> 1) | (bit0 << 7)
+    writeReg(A, a)
+
+    update(1, 4, zerocheck=a, n=0, h=0, c=bit0)
 
 def inc8(reg):
     value = readReg(reg) + 1
