@@ -1,2 +1,4 @@
-__pychache__/
+__pycache__/
 tetris.gb
+*.swo
+*.swp

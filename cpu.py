@@ -24,14 +24,14 @@ def run():
 
     while True:
         op = hex(m.read(pc))
-        print(pc, op)
+        # print(pc, op)
         # input()
         if op == "0x0":
             nop()
         elif op == "0x1":
             loadi16(BC)
         elif op == "0x2":
-            loadfrom((BC), A)
+            loadto((BC), A)
         elif op == "0x3":
             inc16(BC)
         elif op == "0x4":
@@ -47,7 +47,7 @@ def run():
         elif op == "0x9":
             add16s(HL, BC)
         elif op == "0xa":
-            loadto(A, (BC))
+            loadfrom(A, (BC))
         elif op == "0xb":
             dec16(BC)
         elif op == "0xc":
@@ -56,11 +56,13 @@ def run():
             dec8(C)
         elif op == "0xe":
             loadi8(C)
+        elif op == "0xf":
+            rrca()
 
         elif op == "0x11":
             loadi16(DE)
         elif op == "0x12":
-            loadfrom((DE), A)
+            loadto((DE), A)
         elif op == "0x13":
             inc16(DE)
         elif op == "0x14":
@@ -69,11 +71,13 @@ def run():
             dec8(D)
         elif op == "0x16":
             loadi8(D)
+        elif op == "0x17":
+            rla()
 
         elif op == "0x19":
             add16s(HL, DE)
         elif op == "0x1a":
-            loadto(A, (DE))
+            loadfrom(A, (DE))
         elif op == "0x1b":
             dec16(DE)
         elif op == "0x1c":
@@ -85,7 +89,8 @@ def run():
 
         elif op == "0x21":
             loadi16(HL)
-
+        elif op == "0x22":
+            loadtoc('+')
         elif op == "0x23":
             inc16(HL)
         elif op == "0x24":
@@ -98,6 +103,8 @@ def run():
         elif op == "0x29":
             add16s(HL, HL)
 
+        elif op == "0x2a":
+            loadfromc('+')
         elif op == "0x2b":
             dec16(HL)
         elif op == "0x2c":
@@ -109,6 +116,8 @@ def run():
 
         elif op == "0x31":
             loadi16(SP)
+        elif op == "0x32":
+            loadtoc('-')
         elif op == "0x33":
             inc16(SP)
         elif op == "0x34":
@@ -118,7 +127,8 @@ def run():
         elif op == "0x36":
             loadiat((HL))
 
-
+        elif op == "0x3a":
+            loadfromc('-')
         elif op == "0x3b":
             dec16(SP)
         elif op == "0x3c":
@@ -141,7 +151,7 @@ def run():
         elif op == "0x45":
             load(B, L)
         elif op == "0x46":
-            load(B, L)
+            loadfrom(B, (HL))
         elif op == "0x47":
             load(B, A)
         elif op == "0x48":
@@ -156,8 +166,8 @@ def run():
             load(C, H)
         elif op == "0x4d":
             load(C, L)
-        # elif op == "0x4e":
-        #     pass # TODO
+        elif op == "0x4e":
+            loadfrom(C, (HL))
         elif op == "0x4f":
             load(C, A)
         elif op == "0x50":
@@ -172,8 +182,8 @@ def run():
             load(D, H)
         elif op == "0x55":
             load(D, L)
-        # elif op == "0x56":
-        #     pass # TODO
+        elif op == "0x56":
+            loadfrom(B, (HL))
         elif op == "0x57":
             load(D, A)
         elif op == "0x58":
@@ -188,8 +198,8 @@ def run():
             load(E, H)
         elif op == "0x5d":
             load(E, L)
-        # elif op == "0x5e":
-        #     pass # TODO
+        elif op == "0x5e":
+            loadfrom(E, (HL))
         elif op == "0x5f":
             load(E, A)
         elif op == "0x60":
@@ -204,8 +214,8 @@ def run():
             load(H, H)
         elif op == "0x65":
             load(H, L)
-        # elif op == "0x66":
-        #     pass # TODO
+        elif op == "0x66":
+            loadfrom(H, (HL))
         elif op == "0x67":
             load(H, A)
         elif op == "0x68":
@@ -220,26 +230,26 @@ def run():
             load(L, H)
         elif op == "0x6d":
             load(L, L)
-        # elif op == "0x6e":
-        #     pass # TODO
+        elif op == "0x6e":
+            loadfrom(L, (HL))
         elif op == "0x6f":
             load(L, A)
         elif op == "0x70":
-            loadfrom((HL), B)
+            loadto((HL), B)
         elif op == "0x71":
-            loadfrom((HL), C)
+            loadto((HL), C)
         elif op == "0x72":
-            loadfrom((HL), D)
+            loadto((HL), D)
         elif op == "0x73":
-            loadfrom((HL), E)
+            loadto((HL), E)
         elif op == "0x74":
-            loadfrom((HL), H)
+            loadto((HL), H)
         elif op == "0x75":
-            loadfrom((HL), L)
+            loadto((HL), L)
         # elif op == "0x76":
         # HALT
         elif op == "0x77":
-            loadfrom((HL), A)
+            loadto((HL), A)
         elif op == "0x78":
             load(A, B)
         elif op == "0x79":
@@ -253,7 +263,7 @@ def run():
         elif op == "0x7d":
             load(A, L)
         elif op == "0x7e":
-            loadto(A, (HL))
+            loadfrom(A, (HL))
         elif op == "0x7f":
             load(A, A)
         elif op == "0x80":
@@ -268,7 +278,8 @@ def run():
             add8s(A, H)
         elif op == "0x85":
             add8s(A, L)
-
+        elif op == "0x86":
+            addmem()
         elif op == "0x87":
             add8s(A, A)
         elif op == "0x88":
@@ -336,16 +347,55 @@ def loadiat(regs):
 
     update(2, 12)
 
-#def loadisp():
-#    value = (m.read(pc+2) << 8) + (m.read(pc+1))
-#
-#    update(3, 12, newsp=value)
 
-#def loadmemtosp():
-#    addr = ((m.read(pc+2)) << 8) + (m.read(pc+1))
-#    value = m.read(addr)
-#
-#    update(3, 20, newsp=value)
+# Loads the value stored at the address contained by the register
+# Requires a double register for specifying address
+# r = (HL)    LD B,(HL)
+def loadfrom(reg, regs):
+    addr = readRegs(regs)
+    value = m.read(addr)
+    writeReg(reg, value)
+
+    update(1, 8)
+# (HL) = r   LD (HL),B
+def loadto(regs, reg):
+    addr = readRegs(regs)
+    value = readReg(reg)
+    m.write(addr, value)
+
+    update(1, 8)
+
+# LD A, (HL+) and LD A, (HL-)
+def loadfromc(change):
+    assert change == '+' or change == '-'
+    addr = readRegs(HL)
+    value = m.read(addr)
+    writeReg(A, value)
+
+    if change == '+':
+        inc16(HL)
+    elif change == '-':
+        dec16(HL)
+
+    update(1, 8)
+
+# LD (HL+), A and LD (HL-), A
+def loadtoc(change):
+    assert change == '+' or change == '-'
+    addr = readRegs(HL)
+    value = readReg(A)
+    m.write(addr, value)
+
+    if change == '+':
+        inc16(HL)
+    elif change == '-':
+        dec16(HL)
+
+    update(1, 8)
+
+
+
+
 
 def rlca():
     a = readReg(A)
@@ -353,7 +403,23 @@ def rlca():
     a = ((a << 1) & 255) | (a >> 7)
     writeReg(A, a)
 
-    update(1, 4, zerocheck=0, n=0, h=0, c=bit7)
+    update(1, 4, zerocheck=a, n=0, h=0, c=bit7)
+
+def rla():
+    a = readReg(A)
+    bit7 = (a >> 7) & 1
+    a = (((a << 1) | c()) & 255)
+    writeReg(A, a)
+
+    update(1, 4, zerocheck=a, n=0, h=0, c=bit7)
+
+def rrca():
+    a = readReg(A)
+    bit0 = a & 1
+    a = (a >> 1) | (bit0 << 7)
+    writeReg(A, a)
+
+    update(1, 4, zerocheck=a, n=0, h=0, c=bit0)
 
 def inc8(reg):
     value = readReg(reg) + 1
@@ -389,6 +455,16 @@ def add8s(reg1, reg2):
 
     # H flag likely bullshit here too
     update(1, 4, zerocheck=(newv & 255), n=0, h=((newv >> 4) & 1), c=(newv >> 8))
+
+# ADD A,(HL)
+def addmem():
+    value1 = m.read(readRegs(HL))
+    value2 = readReg(A)
+    newv = value1 + value2
+
+    writeReg(A, newv)
+
+    update(1, 8, zerocheck=(newv & 255), n=0, h=((newv >> 4) & 1), c=(newv >> 8))
 
 def subA(reg2):
     v1 = readReg(A)
@@ -451,22 +527,6 @@ def decat(regs):
 
     update(1, 12, zerocheck=value, n=1, h=((value >> 4) & 1))
 
-# Loads the value stored at the address contained by the register
-# Requires a double register for specifying address
-def loadfrom(regs, reg):
-    addr = readRegs(regs)
-    value = m.read(addr)
-    writeReg(reg, value)
-
-    update(1, 8)
-
-def loadto(reg, regs):
-    addr = readRegs(regs)
-    value = readReg(reg)
-    m.write(addr, value)
-
-    update(1, 8)
-
 
 # -----------------
 # ---- Helpers ----
@@ -475,21 +535,15 @@ def loadto(reg, regs):
 def update(pcinc, cycles, zerocheck=-1, n=-1, h=-1, c=-1):
     global pc, cycle
 
-    # print(pc, cycle, bin(regs[F]), sp)
-
     if zerocheck != -1:
         zero(zerocheck)
-
-    #if newsp != -1:
-    #    sp = newsp & 0b1111111111111111
 
     setFlags(n=n, h=h, c=c)
 
     pc = (pc + pcinc) & 0b1111111111111111
     cycle += cycles
 
-    # print(pc, cycle, bin(regs[F]), sp)
-    printState()
+    # printState()
 
 def zero(value):
     if value == 0:
@@ -524,7 +578,7 @@ def setFlags(z=-1, n=-1, h=-1, c=-1):
     if c == 1:
         f = f | (0b00010000)
     elif c == 0:
-        f = f | (0b11100000)
+        f = f & (0b11100000)
 
     regs[F] = f
 
