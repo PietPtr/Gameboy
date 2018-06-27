@@ -24,7 +24,7 @@ def run():
 
     while True:
         op = hex(m.read(pc))
-        # print(pc, op)
+        print(pc, op)
         # input()
         if op == "0x0":
             nop()
@@ -267,51 +267,69 @@ def run():
         elif op == "0x7f":
             load(A, A)
         elif op == "0x80":
-            add8s(A, B)
+            alu8(add, readReg(B), 4)
         elif op == "0x81":
-            add8s(A, C)
+            alu8(add, readReg(C), 4)
         elif op == "0x82":
-            add8s(A, D)
+            alu8(add, readReg(D), 4)
         elif op == "0x83":
-            add8s(A, E)
+            alu8(add, readReg(E), 4)
         elif op == "0x84":
-            add8s(A, H)
+            alu8(add, readReg(H), 4)
         elif op == "0x85":
-            add8s(A, L)
+            alu8(add, readReg(L), 4)
         elif op == "0x86":
-            addmem()
+            alu8(add, m.read(readRegs(HL)), 8)
         elif op == "0x87":
-            add8s(A, A)
+            alu8(add, readReg(A), 4)
         elif op == "0x88":
-            adc(A, B)
+            alu8(adc, readReg(B), 4)
         elif op == "0x89":
-            adc(A, C)
+            alu8(adc, readReg(C), 4)
         elif op == "0x8a":
-            adc(A, D)
+            alu8(adc, readReg(D), 4)
         elif op == "0x8b":
-            adc(A, E)
+            alu8(adc, readReg(E), 4)
         elif op == "0x8c":
-            adc(A, H)
+            alu8(adc, readReg(H), 4)
         elif op == "0x8d":
-            adc(A, L)
-
+            alu8(adc, readReg(L), 4)
+        elif op == "0x8e":
+            alu8(adc, m.read(readRegs(HL)), 8)
         elif op == "0x8f":
-            adc(A, A)
+            alu8(adc, readReg(A), 4)
         elif op == "0x90":
-            subA(B)
+            alu8(sub, readReg(B), 4)
         elif op == "0x91":
-            subA(C)
+            alu8(sub, readReg(C), 4)
         elif op == "0x92":
-            subA(D)
+            alu8(sub, readReg(D), 4)
         elif op == "0x93":
-            subA(E)
+            alu8(sub, readReg(E), 4)
         elif op == "0x94":
-            subA(H)
+            alu8(sub, readReg(H), 4)
         elif op == "0x95":
-            subA(L)
-
+            alu8(sub, readReg(L), 4)
+        elif op == "0x96":
+            alu8(sub, m.read(readRegs(HL)), 8)
         elif op == "0x97":
-            subA(A)
+            alu8(sub, readReg(A), 4)
+        elif op == "0x98":
+            alu8(sbc, readReg(B), 4)
+        elif op == "0x99":
+            alu8(sbc, readReg(C), 4)
+        elif op == "0x9a":
+            alu8(sbc, readReg(D), 4)
+        elif op == "0x9b":
+            alu8(sbc, readReg(E), 4)
+        elif op == "0x9c":
+            alu8(sbc, readReg(H), 4)
+        elif op == "0x9d":
+            alu8(sbc, readReg(L), 4)
+        elif op == "0x9e":
+            alu8(sbc, m.read(readRegs(HL)), 8)
+        elif op == "0x9f":
+            alu8(sbc, readReg(A), 4)
 
         else:
             nop()
@@ -320,6 +338,7 @@ def run():
 # ---- Ops ----
 # -------------
 
+# --- Loads --------------------------------------------------------------------
 def nop():
     update(1, 4)
 
@@ -393,9 +412,7 @@ def loadtoc(change):
 
     update(1, 8)
 
-
-
-
+# --- ALU stuffjes -------------------------------------------------------------
 
 def rlca():
     a = readReg(A)
@@ -445,54 +462,6 @@ def dec16(regs):
 
     update(1, 8)
 
-# Should actually by addA, like subA only register A can be added to.
-def add8s(reg1, reg2):
-    value1 = readReg(reg1)
-    value2 = readReg(reg2)
-    newv = value1 + value2
-
-    writeReg(reg1, value1 + value2)
-
-    # H flag likely bullshit here too
-    update(1, 4, zerocheck=(newv & 255), n=0, h=((newv >> 4) & 1), c=(newv >> 8))
-
-# ADD A,(HL)
-def addmem():
-    value1 = m.read(readRegs(HL))
-    value2 = readReg(A)
-    newv = value1 + value2
-
-    writeReg(A, newv)
-
-    update(1, 8, zerocheck=(newv & 255), n=0, h=((newv >> 4) & 1), c=(newv >> 8))
-
-def subA(reg2):
-    v1 = readReg(A)
-    v2 = readReg(reg2)
-    newv = v1 - v2
-
-    writeReg(A, newv)
-
-    update(1, 4, zerocheck=(newv & 255), n=1, h=((~newv >> 4) & 1), c=(~(newv >> 8) & 1))
-
-# same as with add
-def adc(reg1, reg2):
-    v1 = readReg(reg1)
-    v2 = readReg(reg2)
-    newv = v1 + v2 + c()
-    writeReg(reg1, newv)
-
-    update(1, 4, zerocheck=newv, n=0, h=((newv >> 4) & 1), c=(newv >> 8))
-
-def sbc(reg2):
-    v1 = readReg(A)
-    v2 = readReg(reg2)
-    newv = v1 - v2 - c()
-    writeReg(A, newv)
-
-    update(1, 4, zerocheck=newv, n=1, h=((~newv >> 4) & 1), c=(~(newv >> 8) & 1))
-
-
 def add16s(regs1, regs2):
     value1 = readRegs(regs1)
     value2 = readRegs(regs2)
@@ -502,6 +471,42 @@ def add16s(regs1, regs2):
 
     # H flag likely bullshit
     update(1, 8, n=0, h=(int(newv > 2**11)), c=(newv >> 16))
+
+# --- ALU (80 - BF) ------------------------------------------------------------
+def alu8(func, value, cyc):
+    writeReg(A, func(readReg(A), value, cyc))
+
+def add(a, b, cyc):
+    newv = a + b
+    update(1, cyc, zerocheck=(newv & 255), n=0, h=((newv >> 4) & 1), c=(newv >> 8))
+    return newv
+
+def adc(a, b, cyc):
+    newv = a + b + c()
+    update(1, cyc, zerocheck=newv, n=0, h=((newv >> 4) & 1), c=(newv >> 8))
+    return newv
+
+def sub(a, b, cyc):
+    newv = a - b
+    update(1, cyc, zerocheck=(newv & 255), n=1, h=((~newv >> 4) & 1), c=(~(newv >> 8) & 1))
+    return newv
+
+def sbc(a, b, cyc):
+    newv = a - b - c()
+    update(1, cyc, zerocheck=newv, n=1, h=((~newv >> 4) & 1), c=(~(newv >> 8) & 1))
+    return newv
+
+def and_(a, b, cyc):
+    newv = a & b
+    update(1, cyc, zerocheck=newv, n=0, h=1, c=0)
+
+def xor_(a, b, cyc):
+    newv = a ^ b
+    update(1, cyc, zerocheck=newv, n=0, h=0, c=0)
+
+def or_(a, b, cyc):
+    newv = a | b
+    update(1, cyc, zerocheck=newv, n=0, h=0, c=0)
 
 #def decsp():
 #    global sp
