@@ -24,7 +24,7 @@ def run():
 
     while True:
         op = hex(m.read(pc))
-        print(pc, op)
+        print(hex(pc), op)
         # input()
         if op == "0x0":
             nop()
@@ -378,6 +378,37 @@ def run():
             alu8(or_, m.read(readRegs(HL)), 8)
         elif op == "0xb7":
             alu8(or_, readReg(A), 4)
+        elif op == "0xb8":
+            alu8(cp, readReg(B), 4)
+        elif op == "0xb9":
+            alu8(cp, readReg(C), 4)
+        elif op == "0xba":
+            alu8(cp, readReg(D), 4)
+        elif op == "0xbb":
+            alu8(cp, readReg(E), 4)
+        elif op == "0xbc":
+            alu8(cp, readReg(H), 4)
+        elif op == "0xbd":
+            alu8(cp, readReg(L), 4)
+        elif op == "0xbe":
+            alu8(cp, m.read(readRegs(HL)), 8)
+        elif op == "0xbf":
+            alu8(cp, readReg(A), 4)
+
+        elif op == "0xc2":
+            jumpff(m.read(pc))
+        elif op == "0xc3":
+            jump()
+
+        elif op == "0xd2":
+            jumpff(m.read(pc))
+
+        elif op == "0xca":
+            jumpff(m.read(pc))
+
+        elif op == "0xda":
+            jumpff(m.read(pc))
+
         else:
             nop()
 
@@ -519,6 +550,22 @@ def add16s(regs1, regs2):
     # H flag likely bullshit
     update(1, 8, n=0, h=(int(newv > 2**11)), c=(newv >> 16))
 
+def incat(regs):
+    addr = readRegs(regs)
+    value = m.read(addr) + 1
+    m.write(addr, value)
+
+    update(1, 12, zerocheck=value, n=0, h=((value >> 4) & 1))
+
+# Decrements the value stored at the address contained by the register
+# Requires a double register
+def decat(regs):
+    addr = readRegs(regs)
+    value = m.read(addr) - 1
+    m.write(addr, value)
+
+    update(1, 12, zerocheck=value, n=1, h=((value >> 4) & 1))
+
 # --- ALU (80 - BF) ------------------------------------------------------------
 def alu8(func, value, cyc):
     writeReg(A, func(readReg(A), value, cyc))
@@ -558,38 +605,54 @@ def or_(a, b, cyc):
     update(1, cyc, zerocheck=newv, n=0, h=0, c=0)
     return newv
 
+def cp(a, b, cyc):
+    newv = a
+    update(1, cyc, zerocheck=(newv & 255), n=1, h=((~newv >> 4) & 1), c=int(a < b))
+    return a
+
+# --- Jumps --------------------------------------------------------------------
+def jump():
+    # lsb first, apparently
+    # input()
+    addr = (m.read(pc+2) << 8) | m.read(pc+1)
+    update(3, 16, newpc=addr)
+    print("Jumping to: ", hex(addr))
 
 
-def incat(regs):
-    addr = readRegs(regs)
-    value = m.read(addr) + 1
-    m.write(addr, value)
+def jumpff(op):
+    assert op in [0xc2, 0xca, 0xd2, 0xda]
+    dojump = False
 
-    update(1, 12, zerocheck=value, n=0, h=((value >> 4) & 1))
+    if op == 0xc2:
+        dojump = not bool(z())
+    elif op == 0xca:
+        dojump = bool(z())
+    elif op == 0xd2:
+        dojump = not bool(c())
+    elif op == 0xda:
+        dojump = bool(c())
 
-# Decrements the value stored at the address contained by the register
-# Requires a double register
-def decat(regs):
-    addr = readRegs(regs)
-    value = m.read(addr) - 1
-    m.write(addr, value)
-
-    update(1, 12, zerocheck=value, n=1, h=((value >> 4) & 1))
+    if dojump:
+        jump()
+    else:
+        update(3, 12)
 
 
 # -----------------
 # ---- Helpers ----
 # -----------------
 
-def update(pcinc, cycles, zerocheck=-1, n=-1, h=-1, c=-1):
+def update(pcinc, cycles, zerocheck=-1, n=-1, h=-1, c=-1, newpc=-1):
     global pc, cycle
 
     if zerocheck != -1:
         zero(zerocheck)
 
     setFlags(n=n, h=h, c=c)
-
-    pc = (pc + pcinc) & 0b1111111111111111
+    if newpc == -1:
+        pc = (pc + pcinc) & 0b1111111111111111
+    else:
+        pc = newpc
     cycle += cycles
 
     # printState()
