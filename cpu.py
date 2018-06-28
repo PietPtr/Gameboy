@@ -409,6 +409,9 @@ def run():
         elif op == "0xda":
             jumpff(m.read(pc))
 
+        elif op == "0xe9":
+            jumpto()
+
         else:
             nop()
 
@@ -636,6 +639,12 @@ def jumpff(op):
         jump()
     else:
         update(3, 12)
+
+def jumpto():
+    addr = readRegs(HL)
+    print("jumping to: ", hex(addr))
+    input()
+    update(1, 4, newpc=addr)
 
 
 # -----------------
