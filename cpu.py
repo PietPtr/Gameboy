@@ -1,6 +1,7 @@
 import memory as m
 
 A = 0
+AF = 0
 F = 1
 B = 2
 BC = 2
@@ -73,7 +74,8 @@ def run():
             loadi8(D)
         elif op == "0x17":
             rla()
-
+        elif op == "0x18":
+            jumpr()
         elif op == "0x19":
             add16s(HL, DE)
         elif op == "0x1a":
@@ -87,6 +89,8 @@ def run():
         elif op == "0x1e":
             loadi8(E)
 
+        elif op == "0x20":
+            jumprf(m.read(pc))
         elif op == "0x21":
             loadi16(HL)
         elif op == "0x22":
@@ -100,9 +104,10 @@ def run():
         elif op == "0x26":
             loadi8(H)
 
+        elif op == "0x28":
+            jumprf(m.read(pc))
         elif op == "0x29":
             add16s(HL, HL)
-
         elif op == "0x2a":
             loadfromc('+')
         elif op == "0x2b":
@@ -114,6 +119,8 @@ def run():
         elif op == "0x2e":
             loadi8(L)
 
+        elif op == "0x30":
+            jumprf(m.read(pc))
         elif op == "0x31":
             loadi16(SP)
         elif op == "0x32":
@@ -126,6 +133,9 @@ def run():
             decat((HL))
         elif op == "0x36":
             loadiat((HL))
+
+        elif op == "0x38":
+            jumprf(m.read(pc))
 
         elif op == "0x3a":
             loadfromc('-')
@@ -395,13 +405,27 @@ def run():
         elif op == "0xbf":
             alu8(cp, readReg(A), 4)
 
+        elif op == "0xc1":
+            pop(BC)
         elif op == "0xc2":
             jumpff(m.read(pc))
         elif op == "0xc3":
             jump()
 
+        elif op == "0xc5":
+            push(BC)
+        elif op == "0xc6":
+            alu8(sub, m.read(pc+1), 8, 2)
+
+        elif op == "0xd1":
+            pop(DE)
         elif op == "0xd2":
             jumpff(m.read(pc))
+
+        elif op == "0xd5":
+            push(DE)
+        elif op == "0xd6":
+            alu8(sub, m.read(pc+1), 8, 2)
 
         elif op == "0xca":
             jumpff(m.read(pc))
@@ -409,8 +433,24 @@ def run():
         elif op == "0xda":
             jumpff(m.read(pc))
 
+        elif op == "0xe1":
+            pop(HL)
+
+        elif op == "0xe5":
+            push(HL)
+        elif op == "0xe6":
+            alu8(and_, m.read(pc+1), 8, 2)
+
         elif op == "0xe9":
             jumpto()
+
+        elif op == "0xf1":
+            pop(AF)
+
+        elif op == "0xf5":
+            push(AF)
+        elif op == "0xf6":
+            alu8(or_, m.read(pc+1), 8, 2)
 
         else:
             nop()
@@ -570,53 +610,52 @@ def decat(regs):
     update(1, 12, zerocheck=value, n=1, h=((value >> 4) & 1))
 
 # --- ALU (80 - BF) ------------------------------------------------------------
-def alu8(func, value, cyc):
-    writeReg(A, func(readReg(A), value, cyc))
+def alu8(func, value, cyc, pcinc=1):
+    writeReg(A, func(readReg(A), value, cyc, pcinc))
 
-def add(a, b, cyc):
+def add(a, b, cyc, pcinc):
     newv = a + b
-    update(1, cyc, zerocheck=(newv & 255), n=0, h=((newv >> 4) & 1), c=(newv >> 8))
+    update(pcinc, cyc, zerocheck=(newv & 255), n=0, h=((newv >> 4) & 1), c=(newv >> 8))
     return newv
 
-def adc(a, b, cyc):
+def adc(a, b, cyc, pcinc):
     newv = a + b + c()
-    update(1, cyc, zerocheck=newv, n=0, h=((newv >> 4) & 1), c=(newv >> 8))
+    update(pcinc, cyc, zerocheck=newv, n=0, h=((newv >> 4) & 1), c=(newv >> 8))
     return newv
 
-def sub(a, b, cyc):
+def sub(a, b, cyc, pcinc):
     newv = a - b
-    update(1, cyc, zerocheck=(newv & 255), n=1, h=((~newv >> 4) & 1), c=(~(newv >> 8) & 1))
+    update(pcinc, cyc, zerocheck=(newv & 255), n=1, h=((~newv >> 4) & 1), c=(~(newv >> 8) & 1))
     return newv
 
-def sbc(a, b, cyc):
+def sbc(a, b, cyc, pcinc):
     newv = a - b - c()
-    update(1, cyc, zerocheck=newv, n=1, h=((~newv >> 4) & 1), c=(~(newv >> 8) & 1))
+    update(pcinc, cyc, zerocheck=newv, n=1, h=((~newv >> 4) & 1), c=(~(newv >> 8) & 1))
     return newv
 
-def and_(a, b, cyc):
+def and_(a, b, cyc, pcinc):
     newv = a & b
-    update(1, cyc, zerocheck=newv, n=0, h=1, c=0)
+    update(pcinc, cyc, zerocheck=newv, n=0, h=1, c=0)
     return newv
 
-def xor(a, b, cyc):
+def xor(a, b, cyc, pcinc):
     newv = a ^ b
-    update(1, cyc, zerocheck=newv, n=0, h=0, c=0)
+    update(pcinc, cyc, zerocheck=newv, n=0, h=0, c=0)
     return newv
 
-def or_(a, b, cyc):
+def or_(a, b, cyc, pcinc):
     newv = a | b
-    update(1, cyc, zerocheck=newv, n=0, h=0, c=0)
+    update(pcinc, cyc, zerocheck=newv, n=0, h=0, c=0)
     return newv
 
-def cp(a, b, cyc):
+def cp(a, b, cyc, pcinc):
     newv = a
-    update(1, cyc, zerocheck=(newv & 255), n=1, h=((~newv >> 4) & 1), c=int(a < b))
+    update(pcinc, cyc, zerocheck=(newv & 255), n=1, h=((~newv >> 4) & 1), c=int(a < b))
     return a
 
 # --- Jumps --------------------------------------------------------------------
 def jump():
     # lsb first, apparently
-    # input()
     addr = (m.read(pc+2) << 8) | m.read(pc+1)
     update(3, 16, newpc=addr)
     print("Jumping to: ", hex(addr))
@@ -642,9 +681,52 @@ def jumpff(op):
 
 def jumpto():
     addr = readRegs(HL)
-    print("jumping to: ", hex(addr))
-    input()
     update(1, 4, newpc=addr)
+
+def jumpr():
+    update(m.read(pc+1), 12)
+
+def jumprf(op):
+    assert op in [0x20, 0x30, 0x28, 0x38]
+    dojump = False
+
+    if op == 0x20:
+        dojump = not bool(z())
+    elif op == 0x28:
+        dojump = bool(z())
+    elif op == 0x30:
+        dojump = not bool(c())
+    elif op == 0x38:
+        dojump = bool(c())
+
+    if dojump:
+        jumpr()
+    else:
+        update(2, 8)
+
+
+
+# --- Misc ---------------------------------------------------------------------
+def push(regs):
+    writeRegs(SP, readRegs(SP) - 2)
+
+    addr = readRegs(SP)
+    # BUG: should maybe be the other way around
+    m.write(addr, readRegs(regs) & 255)
+    m.write(addr + 1, readRegs(regs) >> 8)
+
+    update(1, 16)
+
+def pop(regs):
+    addr = readRegs(SP)
+    lsbits = m.read(addr)
+    msbits = m.read(addr + 1) << 8
+    writeRegs(regs, msbits & lsbits)
+
+    writeRegs(SP, readRegs(SP) + 2)
+
+    update(1, 12)
+
 
 
 # -----------------
@@ -754,7 +836,7 @@ def writeReg(reg, value):
     regs[reg] = value
 
 def writeRegs(reg, value):
-    assert reg % 2 == 0 and reg != 0
+    assert reg % 2 == 0
 
     value = value & 65535
 
