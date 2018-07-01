@@ -24,436 +24,450 @@ def run():
     global pc, sp, cycle
 
     while True:
-        op = hex(m.read(pc))
-        print(hex(pc), op)
+        op = m.read(pc)
+        if (cycle >> 22 & 1 == 1):
+            break
         # input()
-        if op == "0x0":
+        if op == 0x0:
             nop()
-        elif op == "0x1":
+        elif op == 0x1:
             loadi16(BC)
-        elif op == "0x2":
+        elif op == 0x2:
             loadto((BC), A)
-        elif op == "0x3":
+        elif op == 0x3:
             inc16(BC)
-        elif op == "0x4":
+        elif op == 0x4:
             inc8(B)
-        elif op == "0x5":
+        elif op == 0x5:
             dec8(B)
-        elif op == "0x6":
+        elif op == 0x6:
             loadi8(B)
-        elif op == "0x7":
+        elif op == 0x7:
             rlca()
-        elif op == "0x8":
+        elif op == 0x8:
             loadi16(SP)
-        elif op == "0x9":
+        elif op == 0x9:
             add16s(HL, BC)
-        elif op == "0xa":
+        elif op == 0xa:
             loadfrom(A, (BC))
-        elif op == "0xb":
+        elif op == 0xb:
             dec16(BC)
-        elif op == "0xc":
+        elif op == 0xc:
             inc8(C)
-        elif op == "0xd":
+        elif op == 0xd:
             dec8(C)
-        elif op == "0xe":
+        elif op == 0xe:
             loadi8(C)
-        elif op == "0xf":
+        elif op == 0xf:
             rrca()
 
-        elif op == "0x11":
+        elif op == 0x11:
             loadi16(DE)
-        elif op == "0x12":
+        elif op == 0x12:
             loadto((DE), A)
-        elif op == "0x13":
+        elif op == 0x13:
             inc16(DE)
-        elif op == "0x14":
+        elif op == 0x14:
             inc8(D)
-        elif op == "0x15":
+        elif op == 0x15:
             dec8(D)
-        elif op == "0x16":
+        elif op == 0x16:
             loadi8(D)
-        elif op == "0x17":
+        elif op == 0x17:
             rla()
-        elif op == "0x18":
+        elif op == 0x18:
             jumpr()
-        elif op == "0x19":
+        elif op == 0x19:
             add16s(HL, DE)
-        elif op == "0x1a":
+        elif op == 0x1a:
             loadfrom(A, (DE))
-        elif op == "0x1b":
+        elif op == 0x1b:
             dec16(DE)
-        elif op == "0x1c":
+        elif op == 0x1c:
             inc8(E)
-        elif op == "0x1d":
+        elif op == 0x1d:
             dec8(E)
-        elif op == "0x1e":
+        elif op == 0x1e:
             loadi8(E)
 
-        elif op == "0x20":
+        elif op == 0x20:
             jumprf(m.read(pc))
-        elif op == "0x21":
+        elif op == 0x21:
             loadi16(HL)
-        elif op == "0x22":
+        elif op == 0x22:
             loadtoc('+')
-        elif op == "0x23":
+        elif op == 0x23:
             inc16(HL)
-        elif op == "0x24":
+        elif op == 0x24:
             inc8(H)
-        elif op == "0x25":
+        elif op == 0x25:
             dec8(H)
-        elif op == "0x26":
+        elif op == 0x26:
             loadi8(H)
 
-        elif op == "0x28":
+        elif op == 0x28:
             jumprf(m.read(pc))
-        elif op == "0x29":
+        elif op == 0x29:
             add16s(HL, HL)
-        elif op == "0x2a":
+        elif op == 0x2a:
             loadfromc('+')
-        elif op == "0x2b":
+        elif op == 0x2b:
             dec16(HL)
-        elif op == "0x2c":
+        elif op == 0x2c:
             inc8(L)
-        elif op == "0x2d":
+        elif op == 0x2d:
             dec8(L)
-        elif op == "0x2e":
+        elif op == 0x2e:
             loadi8(L)
 
-        elif op == "0x30":
+        elif op == 0x30:
             jumprf(m.read(pc))
-        elif op == "0x31":
+        elif op == 0x31:
             loadi16(SP)
-        elif op == "0x32":
+        elif op == 0x32:
             loadtoc('-')
-        elif op == "0x33":
+        elif op == 0x33:
             inc16(SP)
-        elif op == "0x34":
+        elif op == 0x34:
             incat((HL))
-        elif op == "0x35":
+        elif op == 0x35:
             decat((HL))
-        elif op == "0x36":
+        elif op == 0x36:
             loadiat((HL))
 
-        elif op == "0x38":
+        elif op == 0x38:
             jumprf(m.read(pc))
 
-        elif op == "0x3a":
+        elif op == 0x3a:
             loadfromc('-')
-        elif op == "0x3b":
+        elif op == 0x3b:
             dec16(SP)
-        elif op == "0x3c":
+        elif op == 0x3c:
             inc8(A)
-        elif op == "0x3d":
+        elif op == 0x3d:
             dec8(A)
-        elif op == "0x3e":
+        elif op == 0x3e:
             loadi8(A)
 
-        elif op == "0x40":
+        elif op == 0x40:
             load(B, B)
-        elif op == "0x41":
+        elif op == 0x41:
             load(B, C)
-        elif op == "0x42":
+        elif op == 0x42:
             load(B, D)
-        elif op == "0x43":
+        elif op == 0x43:
             load(B, E)
-        elif op == "0x44":
+        elif op == 0x44:
             load(B, H)
-        elif op == "0x45":
+        elif op == 0x45:
             load(B, L)
-        elif op == "0x46":
+        elif op == 0x46:
             loadfrom(B, (HL))
-        elif op == "0x47":
+        elif op == 0x47:
             load(B, A)
-        elif op == "0x48":
+        elif op == 0x48:
             load(C, B)
-        elif op == "0x49":
+        elif op == 0x49:
             load(C, C)
-        elif op == "0x4a":
+        elif op == 0x4a:
             load(C, D)
-        elif op == "0x4b":
+        elif op == 0x4b:
             load(C, E)
-        elif op == "0x4c":
+        elif op == 0x4c:
             load(C, H)
-        elif op == "0x4d":
+        elif op == 0x4d:
             load(C, L)
-        elif op == "0x4e":
+        elif op == 0x4e:
             loadfrom(C, (HL))
-        elif op == "0x4f":
+        elif op == 0x4f:
             load(C, A)
-        elif op == "0x50":
+        elif op == 0x50:
             load(D, B)
-        elif op == "0x51":
+        elif op == 0x51:
             load(D, C)
-        elif op == "0x52":
+        elif op == 0x52:
             load(D, D)
-        elif op == "0x53":
+        elif op == 0x53:
             load(D, E)
-        elif op == "0x54":
+        elif op == 0x54:
             load(D, H)
-        elif op == "0x55":
+        elif op == 0x55:
             load(D, L)
-        elif op == "0x56":
+        elif op == 0x56:
             loadfrom(B, (HL))
-        elif op == "0x57":
+        elif op == 0x57:
             load(D, A)
-        elif op == "0x58":
+        elif op == 0x58:
             load(E, B)
-        elif op == "0x59":
+        elif op == 0x59:
             load(E, C)
-        elif op == "0x5a":
+        elif op == 0x5a:
             load(E, D)
-        elif op == "0x5b":
+        elif op == 0x5b:
             load(E, E)
-        elif op == "0x5c":
+        elif op == 0x5c:
             load(E, H)
-        elif op == "0x5d":
+        elif op == 0x5d:
             load(E, L)
-        elif op == "0x5e":
+        elif op == 0x5e:
             loadfrom(E, (HL))
-        elif op == "0x5f":
+        elif op == 0x5f:
             load(E, A)
-        elif op == "0x60":
+        elif op == 0x60:
             load(H, B)
-        elif op == "0x61":
+        elif op == 0x61:
             load(H, C)
-        elif op == "0x62":
+        elif op == 0x62:
             load(H, D)
-        elif op == "0x63":
+        elif op == 0x63:
             load(H, E)
-        elif op == "0x64":
+        elif op == 0x64:
             load(H, H)
-        elif op == "0x65":
+        elif op == 0x65:
             load(H, L)
-        elif op == "0x66":
+        elif op == 0x66:
             loadfrom(H, (HL))
-        elif op == "0x67":
+        elif op == 0x67:
             load(H, A)
-        elif op == "0x68":
+        elif op == 0x68:
             load(L, B)
-        elif op == "0x69":
+        elif op == 0x69:
             load(L, C)
-        elif op == "0x6a":
+        elif op == 0x6a:
             load(L, D)
-        elif op == "0x6b":
+        elif op == 0x6b:
             load(L, E)
-        elif op == "0x6c":
+        elif op == 0x6c:
             load(L, H)
-        elif op == "0x6d":
+        elif op == 0x6d:
             load(L, L)
-        elif op == "0x6e":
+        elif op == 0x6e:
             loadfrom(L, (HL))
-        elif op == "0x6f":
+        elif op == 0x6f:
             load(L, A)
-        elif op == "0x70":
+        elif op == 0x70:
             loadto((HL), B)
-        elif op == "0x71":
+        elif op == 0x71:
             loadto((HL), C)
-        elif op == "0x72":
+        elif op == 0x72:
             loadto((HL), D)
-        elif op == "0x73":
+        elif op == 0x73:
             loadto((HL), E)
-        elif op == "0x74":
+        elif op == 0x74:
             loadto((HL), H)
-        elif op == "0x75":
+        elif op == 0x75:
             loadto((HL), L)
-        # elif op == "0x76":
+        # elif op == 0x76:
         # HALT
-        elif op == "0x77":
+        elif op == 0x77:
             loadto((HL), A)
-        elif op == "0x78":
+        elif op == 0x78:
             load(A, B)
-        elif op == "0x79":
+        elif op == 0x79:
             load(A, C)
-        elif op == "0x7a":
+        elif op == 0x7a:
             load(A, D)
-        elif op == "0x7b":
+        elif op == 0x7b:
             load(A, E)
-        elif op == "0x7c":
+        elif op == 0x7c:
             load(A, H)
-        elif op == "0x7d":
+        elif op == 0x7d:
             load(A, L)
-        elif op == "0x7e":
+        elif op == 0x7e:
             loadfrom(A, (HL))
-        elif op == "0x7f":
+        elif op == 0x7f:
             load(A, A)
-        elif op == "0x80":
+        elif op == 0x80:
             alu8(add, readReg(B), 4)
-        elif op == "0x81":
+        elif op == 0x81:
             alu8(add, readReg(C), 4)
-        elif op == "0x82":
+        elif op == 0x82:
             alu8(add, readReg(D), 4)
-        elif op == "0x83":
+        elif op == 0x83:
             alu8(add, readReg(E), 4)
-        elif op == "0x84":
+        elif op == 0x84:
             alu8(add, readReg(H), 4)
-        elif op == "0x85":
+        elif op == 0x85:
             alu8(add, readReg(L), 4)
-        elif op == "0x86":
+        elif op == 0x86:
             alu8(add, m.read(readRegs(HL)), 8)
-        elif op == "0x87":
+        elif op == 0x87:
             alu8(add, readReg(A), 4)
-        elif op == "0x88":
+        elif op == 0x88:
             alu8(adc, readReg(B), 4)
-        elif op == "0x89":
+        elif op == 0x89:
             alu8(adc, readReg(C), 4)
-        elif op == "0x8a":
+        elif op == 0x8a:
             alu8(adc, readReg(D), 4)
-        elif op == "0x8b":
+        elif op == 0x8b:
             alu8(adc, readReg(E), 4)
-        elif op == "0x8c":
+        elif op == 0x8c:
             alu8(adc, readReg(H), 4)
-        elif op == "0x8d":
+        elif op == 0x8d:
             alu8(adc, readReg(L), 4)
-        elif op == "0x8e":
+        elif op == 0x8e:
             alu8(adc, m.read(readRegs(HL)), 8)
-        elif op == "0x8f":
+        elif op == 0x8f:
             alu8(adc, readReg(A), 4)
-        elif op == "0x90":
+        elif op == 0x90:
             alu8(sub, readReg(B), 4)
-        elif op == "0x91":
+        elif op == 0x91:
             alu8(sub, readReg(C), 4)
-        elif op == "0x92":
+        elif op == 0x92:
             alu8(sub, readReg(D), 4)
-        elif op == "0x93":
+        elif op == 0x93:
             alu8(sub, readReg(E), 4)
-        elif op == "0x94":
+        elif op == 0x94:
             alu8(sub, readReg(H), 4)
-        elif op == "0x95":
+        elif op == 0x95:
             alu8(sub, readReg(L), 4)
-        elif op == "0x96":
+        elif op == 0x96:
             alu8(sub, m.read(readRegs(HL)), 8)
-        elif op == "0x97":
+        elif op == 0x97:
             alu8(sub, readReg(A), 4)
-        elif op == "0x98":
+        elif op == 0x98:
             alu8(sbc, readReg(B), 4)
-        elif op == "0x99":
+        elif op == 0x99:
             alu8(sbc, readReg(C), 4)
-        elif op == "0x9a":
+        elif op == 0x9a:
             alu8(sbc, readReg(D), 4)
-        elif op == "0x9b":
+        elif op == 0x9b:
             alu8(sbc, readReg(E), 4)
-        elif op == "0x9c":
+        elif op == 0x9c:
             alu8(sbc, readReg(H), 4)
-        elif op == "0x9d":
+        elif op == 0x9d:
             alu8(sbc, readReg(L), 4)
-        elif op == "0x9e":
+        elif op == 0x9e:
             alu8(sbc, m.read(readRegs(HL)), 8)
-        elif op == "0x9f":
+        elif op == 0x9f:
             alu8(sbc, readReg(A), 4)
-        elif op == "0xa0":
+        elif op == 0xa0:
             alu8(and_, readReg(B), 4)
-        elif op == "0xa1":
+        elif op == 0xa1:
             alu8(and_, readReg(C), 4)
-        elif op == "0xa2":
+        elif op == 0xa2:
             alu8(and_, readReg(D), 4)
-        elif op == "0xa3":
+        elif op == 0xa3:
             alu8(and_, readReg(E), 4)
-        elif op == "0xa4":
+        elif op == 0xa4:
             alu8(and_, readReg(H), 4)
-        elif op == "0xa5":
+        elif op == 0xa5:
             alu8(and_, readReg(L), 4)
-        elif op == "0xa6":
+        elif op == 0xa6:
             alu8(and_, m.read(readRegs(HL)), 8)
-        elif op == "0xa7":
+        elif op == 0xa7:
             alu8(and_, readReg(A), 4)
-        elif op == "0xa8":
+        elif op == 0xa8:
             alu8(xor, readReg(B), 4)
-        elif op == "0xa9":
+        elif op == 0xa9:
             alu8(xor, readReg(C), 4)
-        elif op == "0xaa":
+        elif op == 0xaa:
             alu8(xor, readReg(D), 4)
-        elif op == "0xab":
+        elif op == 0xab:
             alu8(xor, readReg(E), 4)
-        elif op == "0xac":
+        elif op == 0xac:
             alu8(xor, readReg(H), 4)
-        elif op == "0xad":
+        elif op == 0xad:
             alu8(xor, readReg(L), 4)
-        elif op == "0xae":
+        elif op == 0xae:
             alu8(xor, m.read(readRegs(HL)), 8)
-        elif op == "0xaf":
+        elif op == 0xaf:
             alu8(xor, readReg(A), 4)
-        elif op == "0xb0":
+        elif op == 0xb0:
             alu8(or_, readReg(B), 4)
-        elif op == "0xb1":
+        elif op == 0xb1:
             alu8(or_, readReg(C), 4)
-        elif op == "0xb2":
+        elif op == 0xb2:
             alu8(or_, readReg(D), 4)
-        elif op == "0xb3":
+        elif op == 0xb3:
             alu8(or_, readReg(E), 4)
-        elif op == "0xb4":
+        elif op == 0xb4:
             alu8(or_, readReg(H), 4)
-        elif op == "0xb5":
+        elif op == 0xb5:
             alu8(or_, readReg(L), 4)
-        elif op == "0xb6":
+        elif op == 0xb6:
             alu8(or_, m.read(readRegs(HL)), 8)
-        elif op == "0xb7":
+        elif op == 0xb7:
             alu8(or_, readReg(A), 4)
-        elif op == "0xb8":
+        elif op == 0xb8:
             alu8(cp, readReg(B), 4)
-        elif op == "0xb9":
+        elif op == 0xb9:
             alu8(cp, readReg(C), 4)
-        elif op == "0xba":
+        elif op == 0xba:
             alu8(cp, readReg(D), 4)
-        elif op == "0xbb":
+        elif op == 0xbb:
             alu8(cp, readReg(E), 4)
-        elif op == "0xbc":
+        elif op == 0xbc:
             alu8(cp, readReg(H), 4)
-        elif op == "0xbd":
+        elif op == 0xbd:
             alu8(cp, readReg(L), 4)
-        elif op == "0xbe":
+        elif op == 0xbe:
             alu8(cp, m.read(readRegs(HL)), 8)
-        elif op == "0xbf":
+        elif op == 0xbf:
             alu8(cp, readReg(A), 4)
 
-        elif op == "0xc1":
+        elif op == 0xc1:
             pop(BC)
-        elif op == "0xc2":
-            jumpff(m.read(pc))
-        elif op == "0xc3":
+        elif op == 0xc2:
+            jumpff(op)
+        elif op == 0xc3:
             jump()
-
-        elif op == "0xc5":
+        elif op == 0xc4:
+            callff(op)
+        elif op == 0xc5:
             push(BC)
-        elif op == "0xc6":
+        elif op == 0xc6:
             alu8(sub, m.read(pc+1), 8, 2)
 
-        elif op == "0xd1":
+        elif op == 0xca:
+            jumpff(op)
+
+        elif op == 0xcc:
+            callff(op)
+        elif op == 0xcd:
+            call()
+
+        elif op == 0xd1:
             pop(DE)
-        elif op == "0xd2":
-            jumpff(m.read(pc))
+        elif op == 0xd2:
+            jumpff(op)
 
-        elif op == "0xd5":
+        elif op == 0xd4:
+            callff(op)
+        elif op == 0xd5:
             push(DE)
-        elif op == "0xd6":
+        elif op == 0xd6:
             alu8(sub, m.read(pc+1), 8, 2)
 
-        elif op == "0xca":
-            jumpff(m.read(pc))
 
-        elif op == "0xda":
-            jumpff(m.read(pc))
 
-        elif op == "0xe0":
+        elif op == 0xda:
+            jumpff(op)
+
+        elif op == 0xdc:
+            callff(op)
+
+        elif op == 0xe0:
             ldh_ia()
-        elif op == "0xe1":
+        elif op == 0xe1:
             pop(HL)
 
-        elif op == "0xe5":
+        elif op == 0xe5:
             push(HL)
-        elif op == "0xe6":
+        elif op == 0xe6:
             alu8(and_, m.read(pc+1), 8, 2)
 
-        elif op == "0xe9":
+        elif op == 0xe9:
             jumpto()
 
-        elif op == "0xf0":
+        elif op == 0xf0:
             ldh_ai()
-        elif op == "0xf1":
+        elif op == 0xf1:
             pop(AF)
 
-        elif op == "0xf5":
+        elif op == 0xf5:
             push(AF)
-        elif op == "0xf6":
+        elif op == 0xf6:
             alu8(or_, m.read(pc+1), 8, 2)
 
         else:
@@ -538,13 +552,13 @@ def loadtoc(change):
     update(1, 8)
 
 def ldh_ia():
-    addr = 0xFF00 & m.read(PC+1)
+    addr = 0xFF00 & m.read(pc+1)
     m.write(addr, readReg(A))
 
     update(2, 12)
 
 def ldh_ai():
-    addr = 0xFF00 & m.read(PC+1)
+    addr = 0xFF00 & m.read(pc+1)
     writeReg(A, m.read(addr))
 
     update(2, 12)
@@ -674,7 +688,6 @@ def jump():
     # lsb first, apparently
     addr = (m.read(pc+2) << 8) | m.read(pc+1)
     update(3, 16, newpc=addr)
-    print("Jumping to: ", hex(addr))
 
 
 def jumpff(op):
@@ -721,25 +734,56 @@ def jumprf(op):
         update(2, 8)
 
 
+def call():
+    pushc(pc+1)
+    addr = (m.read(pc+2) << 8) | m.read(pc+1)
+    update(3, 24, newpc=addr)
+
+def callff(op):
+    assert op in [0xc4, 0xcc, 0xd4, 0xdc]
+    docall = False
+
+    if op == 0xc4:
+        docall = not bool(z())
+    elif op == 0xcc:
+        docall = bool(z())
+    elif op == 0xd4:
+        docall = not bool(c())
+    elif op == 0xdd:
+        docall = bool(c())
+
+    if docall:
+        call()
+    else:
+        update(3, 12)
+
 
 # --- Misc ---------------------------------------------------------------------
-def push(regs):
-    writeRegs(SP, readRegs(SP) - 2)
 
+# WARNING: this function decreases the stack pointer!
+def pushc(value):
+    writeRegs(SP, readRegs(SP) - 2)
     addr = readRegs(SP)
     # BUG: should maybe be the other way around
-    m.write(addr, readRegs(regs) & 255)
-    m.write(addr + 1, readRegs(regs) >> 8)
+    m.write(addr, value & 255)
+    m.write(addr + 1, value >> 8)
+
+
+def push(regs):
+    pushc(readRegs(regs))
 
     update(1, 16)
 
-def pop(regs):
+# WARNING: this function has the side effect of increasing the SP!
+def popc():
     addr = readRegs(SP)
     lsbits = m.read(addr)
     msbits = m.read(addr + 1) << 8
-    writeRegs(regs, msbits & lsbits)
-
     writeRegs(SP, readRegs(SP) + 2)
+    return msbits & lsbits
+
+def pop(regs):
+    writeRegs(regs, popc())
 
     update(1, 12)
 
