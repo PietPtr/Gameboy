@@ -433,6 +433,8 @@ def run():
         elif op == "0xda":
             jumpff(m.read(pc))
 
+        elif op == "0xe0":
+            ldh_ia()
         elif op == "0xe1":
             pop(HL)
 
@@ -444,6 +446,8 @@ def run():
         elif op == "0xe9":
             jumpto()
 
+        elif op == "0xf0":
+            ldh_ai()
         elif op == "0xf1":
             pop(AF)
 
@@ -532,6 +536,18 @@ def loadtoc(change):
         dec16(HL)
 
     update(1, 8)
+
+def ldh_ia():
+    addr = 0xFF00 & m.read(PC+1)
+    m.write(addr, readReg(A))
+
+    update(2, 12)
+
+def ldh_ai():
+    addr = 0xFF00 & m.read(PC+1)
+    writeReg(A, m.read(addr))
+
+    update(2, 12)
 
 # --- ALU stuffjes -------------------------------------------------------------
 

@@ -2,3 +2,4 @@ __pycache__/
 tetris.gb
 *.swo
 *.swp
+progression.sh
