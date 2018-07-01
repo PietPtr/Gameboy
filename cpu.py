@@ -405,7 +405,8 @@ def run():
             alu8(cp, m.read(readRegs(HL)), 8)
         elif op == 0xbf:
             alu8(cp, readReg(A), 4)
-
+        elif op == 0xc0:
+            retff(op)
         elif op == 0xc1:
             pop(BC)
         elif op == 0xc2:
@@ -419,6 +420,10 @@ def run():
         elif op == 0xc6:
             alu8(sub, m.read(pc+1), 8, 2)
 
+        elif op == 0xc8:
+            retff()
+        elif op == 0xc9:
+            ret()
         elif op == 0xca:
             jumpff(op)
 
@@ -427,6 +432,8 @@ def run():
         elif op == 0xcd:
             call()
 
+        elif op == 0xd0:
+            retff(op)
         elif op == 0xd1:
             pop(DE)
         elif op == 0xd2:
@@ -439,7 +446,8 @@ def run():
         elif op == 0xd6:
             alu8(sub, m.read(pc+1), 8, 2)
 
-
+        elif op == 0xd8:
+            retff(op)
 
         elif op == 0xda:
             jumpff(op)
@@ -757,6 +765,28 @@ def callff(op):
     else:
         update(3, 12)
 
+
+def ret():
+    addr = popc()
+    update(1, 16, newpc=addr)
+
+def retff(op):
+    assert op in [0xc0, 0xc8, 0xd0, 0xd8]
+    doreturn = False
+
+    if op == 0xc0:
+        doreturn = not bool(z())
+    elif op == 0xc8:
+        doreturn = bool(z())
+    elif op == 0xd0:
+        doreturn = not bool(c())
+    elif op == 0xd8:
+        doreturn = bool(c())
+
+    if doreturn:
+        call()
+    else:
+        update(1, 8)
 
 # --- Misc ---------------------------------------------------------------------
 
