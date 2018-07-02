@@ -1,3 +1,3 @@
 #!/bin/bash
-
-echo "$(($(cat cpu.py | grep "0x" | grep -v "\#" | wc -l) * 100 / 256))% done!"
+num=$(cat cpu.py | grep "        elif op == 0x" | grep -v "\#" | wc -l)
+echo "$((($num+1) * 100 / 256))% done!"

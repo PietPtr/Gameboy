@@ -89,7 +89,8 @@ def run():
             dec8(E)
         elif op == 0x1e:
             loadi8(E)
-
+        elif op == 0x1f:
+            rra()
         elif op == 0x20:
             jumprf(m.read(pc))
         elif op == 0x21:
@@ -119,7 +120,8 @@ def run():
             dec8(L)
         elif op == 0x2e:
             loadi8(L)
-
+        elif op == 0x2f:
+            cpl()
         elif op == 0x30:
             jumprf(m.read(pc))
         elif op == 0x31:
@@ -134,10 +136,12 @@ def run():
             decat((HL))
         elif op == 0x36:
             loadiat((HL))
-
+        elif op == 0x37:
+            update(1, 4, n=0, h=0, c=1)
         elif op == 0x38:
             jumprf(m.read(pc))
-
+        elif op == 0x39:
+            add16s(HL, SP)
         elif op == 0x3a:
             loadfromc('-')
         elif op == 0x3b:
@@ -148,7 +152,8 @@ def run():
             dec8(A)
         elif op == 0x3e:
             loadi8(A)
-
+        elif op == 0x3f:
+            update(1, 4, n=0, h=0, c=int(not c()))
         elif op == 0x40:
             load(B, B)
         elif op == 0x41:
@@ -419,7 +424,8 @@ def run():
             push(BC)
         elif op == 0xc6:
             alu8(sub, m.read(pc+1), 8, 2)
-
+        elif op == 0xc7:
+            rst(0x00)
         elif op == 0xc8:
             retff()
         elif op == 0xc9:
@@ -431,54 +437,100 @@ def run():
             callff(op)
         elif op == 0xcd:
             call()
-
+        elif op == 0xce:
+            alu(adc, m.read(pc+1), 8, 2)
+        elif op == 0xcf:
+            rst(0x08)
         elif op == 0xd0:
             retff(op)
         elif op == 0xd1:
             pop(DE)
         elif op == 0xd2:
             jumpff(op)
-
+        elif op == 0xd3:
+            nofunction()
         elif op == 0xd4:
             callff(op)
         elif op == 0xd5:
             push(DE)
         elif op == 0xd6:
             alu8(sub, m.read(pc+1), 8, 2)
-
+        elif op == 0xd7:
+            rst(0x10)
         elif op == 0xd8:
             retff(op)
 
         elif op == 0xda:
             jumpff(op)
-
+        elif op == 0xdb:
+            nofunction()
         elif op == 0xdc:
             callff(op)
-
+        elif op == 0xdd:
+            nofunction()
+        elif op == 0xde:
+            alu8(sbc, m.read(pc+1), 8, 2)
+        elif op == 0xdf:
+            rst(0x18)
         elif op == 0xe0:
-            ldh_ia()
+            ldh_ia(m.read(pc+1))
         elif op == 0xe1:
             pop(HL)
-
+        elif op == 0xe2:
+            ldh_ia(readReg(C))
+        elif op == 0xe3:
+            nofunction()
+        elif op == 0xe4:
+            nofunction();
         elif op == 0xe5:
             push(HL)
         elif op == 0xe6:
             alu8(and_, m.read(pc+1), 8, 2)
-
+        elif op == 0xe7:
+            rst(0x20)
         elif op == 0xe9:
             jumpto()
 
+        elif op == 0xeb:
+            nofunction()
+        elif op == 0xec:
+            nofunction()
+        elif op == 0xed:
+            nofunction()
+        elif op == 0xee:
+            alu8(xor, m.read(pc+1), 8, 2)
+        elif op == 0xef:
+            rst(0x28)
         elif op == 0xf0:
-            ldh_ai()
+            ldh_ai(m.read(pc+1))
         elif op == 0xf1:
             pop(AF)
+        elif op == 0xf2:
+            ldh_ai(readReg(C))
 
+        elif op == 0xf4:
+            nofunction
         elif op == 0xf5:
             push(AF)
         elif op == 0xf6:
             alu8(or_, m.read(pc+1), 8, 2)
+        elif op == 0xf7:
+            rst(0x30)
+
+        elif op == 0xf9:
+            ldhlsp()
+
+        elif op == 0xfc:
+            nofunction()
+        elif op == 0xfd:
+            nofunction()
+        elif op == 0xfe:
+            alu8(cp, m.read(pc+1), 8, 2)
+        elif op == 0xff:
+            rst(0x38)
 
         else:
+            print(hex(op), "not implemented.")
             nop()
 
 # -------------
@@ -559,17 +611,21 @@ def loadtoc(change):
 
     update(1, 8)
 
-def ldh_ia():
-    addr = 0xFF00 & m.read(pc+1)
+def ldh_ia(value):
+    addr = 0xFF00 & value
     m.write(addr, readReg(A))
 
     update(2, 12)
 
-def ldh_ai():
-    addr = 0xFF00 & m.read(pc+1)
+def ldh_ai(value):
+    addr = 0xFF00 & value
     writeReg(A, m.read(addr))
 
     update(2, 12)
+
+def ldhlsp():
+    writeRegs(SP, readRegs(HL))
+    update(1, 8)
 
 # --- ALU stuffjes -------------------------------------------------------------
 
@@ -596,6 +652,18 @@ def rrca():
     writeReg(A, a)
 
     update(1, 4, zerocheck=a, n=0, h=0, c=bit0)
+
+def rra():
+    a = readReg(A)
+    bit0 = a & 1
+    bit7 = c()
+    a = (bit7 << 7) | (a >> 1)
+    writeReg(A, a)
+    update(1, 4, zerocheck=a, n=0, h=0, c=bit0)
+
+def cpl():
+    writeReg(A, ~(readReg(A)) & 0xff)
+    update(1, 4, n=1, h=1)
 
 def inc8(reg):
     value = readReg(reg) + 1
@@ -646,6 +714,7 @@ def decat(regs):
     m.write(addr, value)
 
     update(1, 12, zerocheck=value, n=1, h=((value >> 4) & 1))
+
 
 # --- ALU (80 - BF) ------------------------------------------------------------
 def alu8(func, value, cyc, pcinc=1):
@@ -788,6 +857,11 @@ def retff(op):
     else:
         update(1, 8)
 
+
+def rst(addr):
+    pushc(pc)
+    update(1, 16, newpc=addr)
+
 # --- Misc ---------------------------------------------------------------------
 
 # WARNING: this function decreases the stack pointer!
@@ -817,7 +891,8 @@ def pop(regs):
 
     update(1, 12)
 
-
+def nofunction():
+    raise ValueError("Instruction does not exist.")
 
 # -----------------
 # ---- Helpers ----
