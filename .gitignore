@@ -1,5 +1,7 @@
 __pycache__/
 tetris.gb
+*.gb
+*.zip
 *.swo
 *.swp
 progression.sh

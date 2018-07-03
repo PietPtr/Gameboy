@@ -25,6 +25,7 @@ def run():
 
     while True:
         op = m.read(pc)
+        print("{0:#0{1}x}".format(pc, 6), "{0:#0{1}x}".format(op, 6))
         if (cycle >> 22 & 1 == 1):
             break
         # input()
