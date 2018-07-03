@@ -14,10 +14,13 @@ HL = 6
 L = 7
 SP = 8
 
+interrupts = { "v-blank": 0, "lcd_stat": 1, "timer": 2, "serial": 3, "joypad": 4}
+
+
 regs = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 
 pc = 256
-# sp = 0
+ime = 0
 cycle = 0
 
 def run():
@@ -962,6 +965,12 @@ def h():
 
 def c():
     return (readReg(F) >> 4) & 1
+
+def getie(interrupt):
+    return bool(m.read(0xffff) >> (interrupts[interrupt]) & 1)
+
+def getif(interrupt):
+    return bool(m.read(0xff0f) >> (interrupts[interrupt]) & 1)
 
 def to16bitnum(lsbits, msbits):
     return (msbits << 8) + lsbits
