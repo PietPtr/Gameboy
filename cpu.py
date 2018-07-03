@@ -15,18 +15,27 @@ L = 7
 SP = 8
 
 interrupts = { "v-blank": 0, "lcd_stat": 1, "timer": 2, "serial": 3, "joypad": 4}
-
+intrs_ordered = ["v-blank",
+                 "lcd_stat",
+                 "timer",
+                 "serial",
+                 "joypad"]
 
 regs = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 
 pc = 256
 ime = 0
+toggle_ime = False # since the gameboy doesnt update IME immidietly we need helpers
+
 cycle = 0
 
 def run():
-    global pc, sp, cycle
+    global pc, sp, cycle, toggle_ime, ime
 
     while True:
+
+        # -- Decode instruction
+
         op = m.read(pc)
         print("{0:#0{1}x}".format(pc, 6), "{0:#0{1}x}".format(op, 6))
         if (cycle >> 22 & 1 == 1):
@@ -511,7 +520,8 @@ def run():
             pop(AF)
         elif op == 0xf2:
             ldh_ai(readReg(C))
-
+        elif op == 0xf3:
+            di()
         elif op == 0xf4:
             nofunction
         elif op == 0xf5:
@@ -524,6 +534,8 @@ def run():
         elif op == 0xf9:
             ldhlsp()
 
+        elif op == 0xfb:
+            ei()
         elif op == 0xfc:
             nofunction()
         elif op == 0xfd:
@@ -536,6 +548,21 @@ def run():
         else:
             print(hex(op), "not implemented.")
             nop()
+
+        # -- Handle interrupts
+        if toggle_ime and op not in [0xfb, 0xf3]:
+            ime = int(not ime)
+            toggle_ime = False
+
+        if toggle_ime or True:
+            for intr in intrs_ordered:
+                print(intr, getie(intr))
+                if getie(intr) and getif(intr):
+                    pass
+                    # reset IME
+                    # push PC
+                    # jump to start of interrupt
+
 
 # -------------
 # ---- Ops ----
@@ -897,6 +924,18 @@ def pop(regs):
 
 def nofunction():
     raise ValueError("Instruction does not exist.")
+
+def ei():
+    if ime == 0:
+        toggle_ime = True
+
+    update(1, 4)
+
+def di():
+    if ime == 1:
+        toggle_ime = True
+
+    update(1, 4)
 
 # -----------------
 # ---- Helpers ----
