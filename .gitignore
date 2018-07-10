@@ -5,3 +5,5 @@ tetris.gb
 *.swo
 *.swp
 progression.sh
+*.pdf
+*.html

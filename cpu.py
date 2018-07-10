@@ -20,8 +20,14 @@ intrs_ordered = ["v-blank",
                  "timer",
                  "serial",
                  "joypad"]
+intr_addrs = {
+    intrs_ordered[0]: 0x40,
+    intrs_ordered[1]: 0x48,
+    intrs_ordered[2]: 0x50,
+    intrs_ordered[3]: 0x58,
+    intrs_ordered[4]: 0x60}
 
-regs = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+regs = [0x01, 0xb0, 0x00, 0x13, 0x00, 0xd8, 0x01, 0x4d, 0xff, 0xfe]
 
 pc = 256
 ime = 0
@@ -37,7 +43,8 @@ def run():
         # -- Decode instruction
 
         op = m.read(pc)
-        print("{0:#0{1}x}".format(pc, 6), "{0:#0{1}x}".format(op, 6))
+        print("{0:#0{1}x}".format(pc, 6), "{0:#0{1}x}".format(op, 4))
+        printState()
         if (cycle >> 22 & 1 == 1):
             break
         # input()
@@ -547,21 +554,22 @@ def run():
 
         else:
             print(hex(op), "not implemented.")
-            nop()
+            break
+        input()
 
         # -- Handle interrupts
         if toggle_ime and op not in [0xfb, 0xf3]:
             ime = int(not ime)
             toggle_ime = False
 
-        if toggle_ime or True:
+        if ime == 1:
             for intr in intrs_ordered:
-                print(intr, getie(intr))
+                print(intr, getie(intr), getif(intr))
                 if getie(intr) and getif(intr):
-                    pass
-                    # reset IME
-                    # push PC
-                    # jump to start of interrupt
+                    ime = 0
+                    pushc(pc)
+                    pc = intr_addrs[intr]
+                    print("interrupt occured!")
 
 
 # -------------
@@ -626,7 +634,7 @@ def loadfromc(change):
     elif change == '-':
         dec16(HL)
 
-    update(1, 8)
+    # no update, performed in inc/dec
 
 # LD (HL+), A and LD (HL-), A
 def loadtoc(change):
@@ -640,7 +648,7 @@ def loadtoc(change):
     elif change == '-':
         dec16(HL)
 
-    update(1, 8)
+    # No update, update is done in inc16/dec16
 
 def ldh_ia(value):
     addr = 0xFF00 & value
@@ -1023,7 +1031,11 @@ def printFlags():
     print("Flags: z=" + str((f >> 7) & 1), end=", ")
     print("n=" + str((f >> 6) & 1), end=", ")
     print("h=" + str((f >> 5) & 1), end=", ")
-    print("c=" + str((f >> 4) & 1))
+    print("c=" + str((f >> 4) & 1), end=", ")
+    print("if=" + "{0:#0{1}x}".format(m.read(0xff0f), 4), end=", ")
+    print("ie=" + "{0:#0{1}x}".format(m.read(0xffff), 4), end=", ")
+
+    print("ime=" + str(ime))
 
 def printRegs():
     names = "AFBCDEHL"
