@@ -29,14 +29,17 @@ intr_addrs = {
 
 regs = [0x01, 0xb0, 0x00, 0x13, 0x00, 0xd8, 0x01, 0x4d, 0xff, 0xfe]
 
-pc = 256
+pc = 0x100
 ime = 0
 toggle_ime = False # since the gameboy doesnt update IME immidietly we need helpers
 
 cycle = 0
 
+broken = False
+breakpoint = 0x20f
+
 def run():
-    global pc, sp, cycle, toggle_ime, ime
+    global pc, sp, cycle, toggle_ime, ime, broken, breakpoint
 
     while True:
 
@@ -44,10 +47,17 @@ def run():
 
         op = m.read(pc)
         print("{0:#0{1}x}".format(pc, 6), "{0:#0{1}x}".format(op, 4))
-        printState()
-        if (cycle >> 22 & 1 == 1):
-            break
-        # input()
+
+        # if (cycle >> 22 & 1 == 1):
+        #     break
+
+        if breakpoint != None and pc == breakpoint:
+            broken = True
+        if broken == True:
+            print("{0:#0{1}x}".format(pc, 6), "{0:#0{1}x}".format(op, 4))
+            printState()
+            input()
+
         if op == 0x0:
             nop()
         elif op == 0x1:
@@ -510,7 +520,8 @@ def run():
             rst(0x20)
         elif op == 0xe9:
             jumpto()
-
+        elif op == 0xea:
+            putabs()
         elif op == 0xeb:
             nofunction()
         elif op == 0xec:
@@ -540,7 +551,8 @@ def run():
 
         elif op == 0xf9:
             ldhlsp()
-
+        elif op == 0xfa:
+            loadabs()
         elif op == 0xfb:
             ei()
         elif op == 0xfc:
@@ -555,7 +567,6 @@ def run():
         else:
             print(hex(op), "not implemented.")
             break
-        input()
 
         # -- Handle interrupts
         if toggle_ime and op not in [0xfb, 0xf3]:
@@ -665,6 +676,21 @@ def ldh_ai(value):
 def ldhlsp():
     writeRegs(SP, readRegs(HL))
     update(1, 8)
+
+def putabs():
+    ls = m.read(pc + 1)
+    ms = m.read(pc + 2)
+    addr = ms << 8 | ls
+    m.write(addr, readReg(A))
+    update(3, 16)
+
+def loadabs():
+    ls = m.read(pc + 1)
+    ms = m.read(pc + 2)
+    addr = ms << 8 | ls
+    writeReg(A, m.read(addr))
+    update(3, 16)
+
 
 # --- ALU stuffjes -------------------------------------------------------------
 
@@ -811,13 +837,13 @@ def jumpff(op):
     dojump = False
 
     if op == 0xc2:
-        dojump = not bool(z())
+        dojump = z() == 0
     elif op == 0xca:
-        dojump = bool(z())
+        dojump = z() == 1
     elif op == 0xd2:
-        dojump = not bool(c())
+        dojump = c() == 0
     elif op == 0xda:
-        dojump = bool(c())
+        dojump = c() == 1
 
     if dojump:
         jump()
@@ -829,20 +855,21 @@ def jumpto():
     update(1, 4, newpc=addr)
 
 def jumpr():
-    update(m.read(pc+1), 12)
+    rel = m.read(pc+1)
+    update(ones(rel) + 1, 12)
 
 def jumprf(op):
     assert op in [0x20, 0x30, 0x28, 0x38]
     dojump = False
 
     if op == 0x20:
-        dojump = not bool(z())
+        dojump = z() == 0
     elif op == 0x28:
-        dojump = bool(z())
+        dojump = z() == 1
     elif op == 0x30:
-        dojump = not bool(c())
+        dojump = c() == 0
     elif op == 0x38:
-        dojump = bool(c())
+        dojump = c() == 1
 
     if dojump:
         jumpr()
@@ -860,13 +887,13 @@ def callff(op):
     docall = False
 
     if op == 0xc4:
-        docall = not bool(z())
+        docall = z() == 0
     elif op == 0xcc:
-        docall = bool(z())
+        docall = z() == 1
     elif op == 0xd4:
-        docall = not bool(c())
+        docall = c() == 0
     elif op == 0xdd:
-        docall = bool(c())
+        docall = c() == 1
 
     if docall:
         call()
@@ -883,13 +910,13 @@ def retff(op):
     doreturn = False
 
     if op == 0xc0:
-        doreturn = not bool(z())
+        doreturn = z() == 0
     elif op == 0xc8:
-        doreturn = bool(z())
+        doreturn = z() == 1
     elif op == 0xd0:
-        doreturn = not bool(c())
+        doreturn = c() == 0
     elif op == 0xd8:
-        doreturn = bool(c())
+        doreturn = c() == 1
 
     if doreturn:
         call()
@@ -949,14 +976,15 @@ def di():
 # ---- Helpers ----
 # -----------------
 
-def update(pcinc, cycles, zerocheck=-1, n=-1, h=-1, c=-1, newpc=-1):
+def update(pcinc, cycles, zerocheck=None, n=-1, h=-1, c=-1, newpc=None):
     global pc, cycle
 
-    if zerocheck != -1:
+    if zerocheck != None:
+        # print(" > Zero check: ", zerocheck)
         zero(zerocheck)
 
     setFlags(n=n, h=h, c=c)
-    if newpc == -1:
+    if newpc == None:
         pc = (pc + pcinc) & 0b1111111111111111
     else:
         pc = newpc
@@ -965,7 +993,7 @@ def update(pcinc, cycles, zerocheck=-1, n=-1, h=-1, c=-1, newpc=-1):
     # printState()
 
 def zero(value):
-    if value == 0:
+    if (value & 0xff) == 0:
         setFlags(z=1)
     else:
         setFlags(z=0)
@@ -1086,3 +1114,7 @@ def readReg(reg):
     assert reg <= 8
 
     return regs[reg]
+
+def ones(value):
+    value = value & 0xff
+    return value if value < 128 else value - 255
