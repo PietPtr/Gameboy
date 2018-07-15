@@ -462,7 +462,8 @@ def run():
             ret()
         elif op == 0xca:
             jumpff(op)
-
+        elif op == 0xcb:
+            prefixcb(op)
         elif op == 0xcc:
             callff(op)
         elif op == 0xcd:
@@ -824,6 +825,31 @@ def cp(a, b, cyc, pcinc):
     newv = a
     update(pcinc, cyc, zerocheck=(newv & 255), n=1, h=((~newv >> 4) & 1), c=int(a < b))
     return a
+
+# --- Prefix CB ----------------------------------------------------------------
+def prefixcb(op):
+    if op & 0b11111000 == 0:
+        print("rlc")
+    elif op & 0b11111000 == 8:
+        print("rrc")
+    elif op & 0b11111000 == 16:
+        print("rl")
+    elif op & 0b11111000 == 24:
+        print("rr")
+    elif op & 0b11111000 == 32:
+        print("sla")
+    elif op & 0b11111000 == 40:
+        print("sra")
+    elif op & 0b11111000 == 48:
+        print("swap")
+    elif op & 0b11111000 == 56:
+        print("srl")
+    elif op & 0b11000000 == 64:
+        print("bit")
+    elif op & 0b11000000 == 128:
+        print("reset")
+    elif op & 0b11000000 == 192:
+        print("set")
 
 # --- Jumps --------------------------------------------------------------------
 def jump():
