@@ -463,7 +463,7 @@ def run():
         elif op == 0xca:
             jumpff(op)
         elif op == 0xcb:
-            prefixcb(op)
+            prefixcb(m.read(pc+1))
         elif op == 0xcc:
             callff(op)
         elif op == 0xcd:
@@ -827,7 +827,22 @@ def cp(a, b, cyc, pcinc):
     return a
 
 # --- Prefix CB ----------------------------------------------------------------
+def operand(op):
+    oprd = { 0x0: B,
+             0x1: C,
+             0x2: D,
+             0x3: E,
+             0x4: H,
+             0x5: L,
+             0x6: "(HL)",
+             0x7: A }
+    return oprd[op & 0b111]
+
 def prefixcb(op):
+    oprd = operand(op)
+    value = readReg(oprd) if type(oprd) == int else m.read(readRegs(HL))
+    newvalue = None
+
     if op & 0b11111000 == 0:
         print("rlc")
     elif op & 0b11111000 == 8:
@@ -837,19 +852,52 @@ def prefixcb(op):
     elif op & 0b11111000 == 24:
         print("rr")
     elif op & 0b11111000 == 32:
-        print("sla")
+        newvalue = sla(value)
     elif op & 0b11111000 == 40:
-        print("sra")
+        newvalue = sra(value)
     elif op & 0b11111000 == 48:
-        print("swap")
+        newvalue = swap(value)
     elif op & 0b11111000 == 56:
-        print("srl")
+        newvalue = srl(value)
     elif op & 0b11000000 == 64:
         print("bit")
     elif op & 0b11000000 == 128:
         print("reset")
     elif op & 0b11000000 == 192:
         print("set")
+
+    if newvalue != None:
+        print("previous: ", value, " new: ", newvalue)
+        if type(oprd) == int:
+            writeReg(oprd, newvalue)
+        else:
+            update(0, 8) # additional 8 cycles for writing to (HL)
+            m.write(readRegs(HL), newvalue)
+
+def sla(v):
+    bit7 = v >> 7 & 1
+    newv = (v << 1) & 0xff
+    update(2, 8, zerocheck=newv, n=0, h=0, c=bit7)
+    return newv
+
+def sra(v):
+    bit7 = v >> 7 & 1
+    print(bit7)
+    newv = ((v >> 1) & 0xff) | (bit7 << 7)
+    return newv
+
+def swap(v):
+    lsbits = v & 0x0f
+    msbits = v & 0xf0
+    newv = (lsbits << 4) | (msbits >> 4)
+    update(2, 8, zerocheck=newv, n=0, h=0, c=0)
+    return newv
+
+def srl(v):
+    bit0 = v & 0b1
+    newv = v >> 1
+    update(2, 8, zerocheck=newv, n=0, h=0, c=bit0)
+    return newv
 
 # --- Jumps --------------------------------------------------------------------
 def jump():
