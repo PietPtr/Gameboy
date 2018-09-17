@@ -36,7 +36,7 @@ toggle_ime = False # since the gameboy doesnt update IME immidietly we need help
 cycle = 0
 
 broken = False
-breakpoint = 0x20f
+breakpoint = 0x2b0
 
 def run():
     global pc, sp, cycle, toggle_ime, ime, broken, breakpoint
@@ -57,6 +57,7 @@ def run():
             print("{0:#0{1}x}".format(pc, 6), "{0:#0{1}x}".format(op, 4))
             printState()
             input()
+
 
         if op == 0x0:
             nop()
@@ -582,6 +583,7 @@ def run():
                     pushc(pc)
                     pc = intr_addrs[intr]
                     print("interrupt occured!")
+                    input()
 
 
 # -------------
@@ -663,13 +665,13 @@ def loadtoc(change):
     # No update, update is done in inc16/dec16
 
 def ldh_ia(value):
-    addr = 0xFF00 & value
+    addr = 0xFF00 | value
     m.write(addr, readReg(A))
 
     update(2, 12)
 
 def ldh_ai(value):
-    addr = 0xFF00 & value
+    addr = 0xFF00 | value
     writeReg(A, m.read(addr))
 
     update(2, 12)
@@ -822,8 +824,9 @@ def or_(a, b, cyc, pcinc):
     return newv
 
 def cp(a, b, cyc, pcinc):
+    print(hex(a), hex(b), cyc, pcinc)
     newv = a
-    update(pcinc, cyc, zerocheck=(newv & 255), n=1, h=((~newv >> 4) & 1), c=int(a < b))
+    update(pcinc, cyc, zerocheck=(a - b), n=1, h=((~newv >> 4) & 1), c=int(a < b))
     return a
 
 # --- Prefix CB ----------------------------------------------------------------
@@ -844,13 +847,13 @@ def prefixcb(op):
     newvalue = None
 
     if op & 0b11111000 == 0:
-        print("rlc")
+        newvalue = rlc(value)
     elif op & 0b11111000 == 8:
-        print("rrc")
+        newvalue = rrc(value)
     elif op & 0b11111000 == 16:
-        print("rl")
+        newvalue = rl(value)
     elif op & 0b11111000 == 24:
-        print("rr")
+        newvalue = rr(value)
     elif op & 0b11111000 == 32:
         newvalue = sla(value)
     elif op & 0b11111000 == 40:
@@ -860,11 +863,11 @@ def prefixcb(op):
     elif op & 0b11111000 == 56:
         newvalue = srl(value)
     elif op & 0b11000000 == 64:
-        print("bit")
+        bit(value, op)
     elif op & 0b11000000 == 128:
-        print("reset")
+        newvalue = reset(value, op)
     elif op & 0b11000000 == 192:
-        print("set")
+        newvalue = gset(value, op)
 
     if newvalue != None:
         print("previous: ", value, " new: ", newvalue)
@@ -873,6 +876,30 @@ def prefixcb(op):
         else:
             update(0, 8) # additional 8 cycles for writing to (HL)
             m.write(readRegs(HL), newvalue)
+
+def rlc(v):
+    bit7 = (v >> 7) & 1
+    rotated = (v << 1 & 0xff) | bit7
+    update(2, 8, zerocheck=rotated, n=0, h=0, c=bit7)
+    return rotated
+
+def rrc(v):
+    bit0 = v & 1
+    rotated = v >> 1 | (bit0 << 7)
+    update(2, 8, zerocheck=rotated, n=0, h=0, c=bit0)
+    return rotated
+
+def rl(v):
+    bit7 = (v >> 7) & 1
+    rotated = (v << 1 & 0xff) | c()
+    update(2, 8, zerocheck=rotated, n=0, h=0, c=bit7)
+    return rotated
+
+def rr(v):
+    bit0 = v & 1
+    rotated = v >> 1 | (c() << 7)
+    update(2, 8, zerocheck=rotated, n=0, h=0, c=bit0)
+    return rotated
 
 def sla(v):
     bit7 = v >> 7 & 1
@@ -898,6 +925,21 @@ def srl(v):
     newv = v >> 1
     update(2, 8, zerocheck=newv, n=0, h=0, c=bit0)
     return newv
+
+def bit(value, op):
+    place = op >> 3 & 0b111
+    bitvalue = value >> place & 1
+    update(2, 8, zerocheck=bitvalue, n=0, h=1)
+
+def reset(value, op):
+    place = op >> 3 & 0b111
+    mask = 1 << place ^ 0xff
+    return value & mask
+
+def gset(value, op):
+    place = op >> 3 & 0b111
+    mask = 1 << place
+    return value | mask
 
 # --- Jumps --------------------------------------------------------------------
 def jump():
@@ -1127,6 +1169,7 @@ def to16bitnum(lsbits, msbits):
 def printState():
     printRegs()
     printFlags()
+    printLCD()
 
 def printFlags():
     f = readReg(F)
@@ -1151,6 +1194,9 @@ def printRegs():
     for i in range(1, 5):
         print(str(names[i]) + ":", "{0:#0{1}x}, ".format(readRegs(i*2), 6), end="")
     print()
+
+def printLCD():
+    print("LY=" + str(hex(m.read(0xff44))), "LCDC=" + str(hex(m.read(0xff41))))
 
 def writeA(value):
     global A
