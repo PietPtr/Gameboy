@@ -27,16 +27,17 @@ intr_addrs = {
     intrs_ordered[3]: 0x58,
     intrs_ordered[4]: 0x60}
 
-regs = [0x01, 0xb0, 0x00, 0x13, 0x00, 0xd8, 0x01, 0x4d, 0xff, 0xfe]
+# regs = [0x01, 0xb0, 0x00, 0x13, 0x00, 0xd8, 0x01, 0x4d, 0xff, 0xfe]
+regs = [0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0]
 
-pc = 0x100
+pc = 0x00
 ime = 0
 toggle_ime = False # since the gameboy doesnt update IME immidietly we need helpers
 
 cycle = 0
 
 broken = False
-breakpoint = 0x2b0
+breakpoint = 0x96
 
 def run():
     global pc, sp, cycle, toggle_ime, ime, broken, breakpoint
@@ -53,10 +54,6 @@ def run():
 
         if breakpoint != None and pc == breakpoint:
             broken = True
-        if broken == True:
-            print("{0:#0{1}x}".format(pc, 6), "{0:#0{1}x}".format(op, 4))
-            printState()
-            input()
 
 
         if op == 0x0:
@@ -570,6 +567,11 @@ def run():
             print(hex(op), "not implemented.")
             break
 
+
+        if broken == True:
+            printState()
+            input()
+
         # -- Handle interrupts
         if toggle_ime and op not in [0xfb, 0xf3]:
             ime = int(not ime)
@@ -870,7 +872,6 @@ def prefixcb(op):
         newvalue = gset(value, op)
 
     if newvalue != None:
-        print("previous: ", value, " new: ", newvalue)
         if type(oprd) == int:
             writeReg(oprd, newvalue)
         else:
