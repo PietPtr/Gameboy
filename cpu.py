@@ -37,7 +37,7 @@ toggle_ime = False # since the gameboy doesnt update IME immidietly we need help
 cycle = 0
 
 broken = False
-breakpoint = 0x96
+breakpoints = [0x99]
 
 def run():
     global pc, sp, cycle, toggle_ime, ime, broken, breakpoint
@@ -52,9 +52,8 @@ def run():
         # if (cycle >> 22 & 1 == 1):
         #     break
 
-        if breakpoint != None and pc == breakpoint:
+        if breakpoints != [] and pc in breakpoints:
             broken = True
-
 
         if op == 0x0:
             nop()
@@ -567,10 +566,9 @@ def run():
             print(hex(op), "not implemented.")
             break
 
-
         if broken == True:
-            printState()
-            input()
+            handleBroken()
+
 
         # -- Handle interrupts
         if toggle_ime and op not in [0xfb, 0xf3]:
@@ -1167,38 +1165,6 @@ def getif(interrupt):
 def to16bitnum(lsbits, msbits):
     return (msbits << 8) + lsbits
 
-def printState():
-    printRegs()
-    printFlags()
-    printLCD()
-
-def printFlags():
-    f = readReg(F)
-    print("Flags: z=" + str((f >> 7) & 1), end=", ")
-    print("n=" + str((f >> 6) & 1), end=", ")
-    print("h=" + str((f >> 5) & 1), end=", ")
-    print("c=" + str((f >> 4) & 1), end=", ")
-    print("if=" + "{0:#0{1}x}".format(m.read(0xff0f), 4), end=", ")
-    print("ie=" + "{0:#0{1}x}".format(m.read(0xffff), 4), end=", ")
-
-    print("ime=" + str(ime))
-
-def printRegs():
-    names = "AFBCDEHL"
-    print("Registers: ", end="")
-    for i in range(0, L+1):
-        print(str(names[i]) + ":", "{0:#0{1}x}, ".format(regs[i], 4), end="")
-    print()
-
-    print("Double registers: ", end="")
-    names = ["", "BC", "DE", "HL", "SP"]
-    for i in range(1, 5):
-        print(str(names[i]) + ":", "{0:#0{1}x}, ".format(readRegs(i*2), 6), end="")
-    print()
-
-def printLCD():
-    print("LY=" + str(hex(m.read(0xff44))), "LCDC=" + str(hex(m.read(0xff41))))
-
 def writeA(value):
     global A
     regs[A] = value
@@ -1239,3 +1205,153 @@ def readReg(reg):
 def ones(value):
     value = value & 0xff
     return value if value < 128 else value - 255
+
+# --- DEBUG ----------------------------------------------
+
+
+def printState():
+    printRegs()
+    printFlags()
+    printLCD()
+
+def printFlags():
+    f = readReg(F)
+    print("Flags: z=" + str((f >> 7) & 1), end=", ")
+    print("n=" + str((f >> 6) & 1), end=", ")
+    print("h=" + str((f >> 5) & 1), end=", ")
+    print("c=" + str((f >> 4) & 1), end=", ")
+    print("if=" + "{0:#0{1}x}".format(m.read(0xff0f), 4), end=", ")
+    print("ie=" + "{0:#0{1}x}".format(m.read(0xffff), 4), end=", ")
+
+    print("ime=" + str(ime))
+
+def printRegs():
+    names = "AFBCDEHL"
+    print("Registers: ", end="")
+    for i in range(0, L+1):
+        print(str(names[i]) + ":", "{0:#0{1}x}, ".format(regs[i], 4), end="")
+    print()
+
+    print("Double registers: ", end="")
+    names = ["", "BC", "DE", "HL", "SP"]
+    for i in range(1, 5):
+        print(str(names[i]) + ":", "{0:#0{1}x}, ".format(readRegs(i*2), 6), end="")
+    print()
+
+def printLCD():
+    print("LY=" + str(hex(m.read(0xff44))), "LCDC=" + str(hex(m.read(0xff41))))
+
+def printMemRange(start, end):
+    values = m.memory[start:(end+1)]
+
+    result = "       "
+
+    for i in range(16):
+        digit = str(hex((start & 0xf) + i))[2]
+        result += "xxx" + digit + " "
+
+    i = 0
+    for value in values:
+        if i % 16 == 0:
+            address = ("{0:#0{1}x}".format(start + i, 6))[:-1] + "x"
+            result += "\n" + address
+
+        result += " " + "{0:#0{1}x}".format(value, 4)
+
+        i += 1
+
+    print(result)
+
+def printStack(stackstart=0xffff):
+    sp = readRegs(SP)
+    size = (stackstart+1) - sp
+    result = ""
+    for i in range(size // 2):
+        address = sp + i * 2
+        address_str = "{0:#0{1}x}".format(address, 6)
+        value_str = "{0:#0{1}x}".format(m.reads(address), 6)
+        result += "  " + address_str + ":  | " + value_str + " |"
+
+        if i == 0:
+            result += " <-"
+
+        result += "\n"
+
+    print(result)
+
+default_debug_command = "nothing"
+default_debug_arguments = []
+
+def handleBroken():
+    global default_debug_command
+    global default_debug_arguments
+    printState()
+
+    commands = {
+        "m": cmd_memory,
+        "memory": cmd_memory,
+        "s": cmd_stack,
+        "stack": cmd_stack,
+        "r": cmd_run,
+        "run": cmd_run,
+        "br": cmd_breakpoint,
+        "breakpoint": cmd_breakpoint,
+        "nothing": lambda args: True
+    }
+
+    command = "-"
+    while command != "":
+        full_cmd = input("> ")
+        command = full_cmd.split(" ")[0]
+        args = full_cmd.split(" ")[1:]
+        if command in commands:
+            commands[command](args)
+        elif command == "d" or command == "default":
+            default_debug_command = args[0]
+            default_debug_arguments = args[1:]
+            print("Set the default command to:",
+                default_debug_command, " ".join(default_debug_arguments))
+    else:
+        commands[default_debug_command](default_debug_arguments)
+
+def cmd_breakpoint(args):
+    global breakpoints
+    if len(args) == 1:
+        if args[0] == "list":
+            print(">", [hex(x) for x in breakpoints])
+    elif len(args) == 2:
+        line = int(args[1], 0)
+        if args[0] == "add":
+            breakpoints.append(line)
+            print(">", [hex(x) for x in breakpoints])
+        elif args[0] == "rm":
+            if line in breakpoints:
+                breakpoints.remove(line)
+                print(">", [hex(x) for x in breakpoints])
+            else:
+                print("No such breakpoint.")
+        else:
+            print("Unknown breakpoint argument")
+
+
+def cmd_stack(args):
+    if len(args) >= 1:
+        printStack(stackstart=(int(args[0], 0)))
+    else:
+        printStack()
+
+def cmd_run(args):
+    global broken
+    broken = False
+    print("[Enter]", end="")
+
+def cmd_memory(args):
+    if len(args) == 1:
+        address = int(args[0], 0)
+        print(hex(m.read(address)))
+    elif len(args) == 2:
+        start_addr = int(args[0], 0)
+        end_addr = int(args[1], 0)
+        printMemRange(start_addr, end_addr)
+    else:
+        print("Unsupported amount of arguments")

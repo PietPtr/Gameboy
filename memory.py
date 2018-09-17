@@ -15,6 +15,11 @@ def read(addr):
     addr = addr & 0xFFFF
     return memory[addr]
 
+def reads(addr):
+    lsbits = read(addr)
+    msbits = read(addr + 1)
+    return msbits << 8 | lsbits
+
 def write(addr, value):
     # TODO: add write protection and stuff
     memory[addr] = value
