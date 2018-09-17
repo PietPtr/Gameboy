@@ -20,6 +20,17 @@ Another gameboy emulator
 # sets a default command to be executed every step
 > default stack
 Set the default command to: stack
+
+# add, remove, and list breakpoints
+> breakpoint list
+['0x99']
+> breakpoint add 0x44
+['0x99', '0x44']
+> breakpoint rm 0x99
+['0x44']
+
+# run to the next breakpoint
+> run
 ```
 
 # Resources

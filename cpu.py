@@ -37,7 +37,7 @@ toggle_ime = False # since the gameboy doesnt update IME immidietly we need help
 cycle = 0
 
 broken = False
-breakpoints = [0x99]
+breakpoints = [0x00]
 
 def run():
     global pc, sp, cycle, toggle_ime, ime, broken, breakpoint
@@ -1318,16 +1318,16 @@ def cmd_breakpoint(args):
     global breakpoints
     if len(args) == 1:
         if args[0] == "list":
-            print(">", [hex(x) for x in breakpoints])
+            print([hex(x) for x in breakpoints])
     elif len(args) == 2:
         line = int(args[1], 0)
         if args[0] == "add":
             breakpoints.append(line)
-            print(">", [hex(x) for x in breakpoints])
+            print([hex(x) for x in breakpoints])
         elif args[0] == "rm":
             if line in breakpoints:
                 breakpoints.remove(line)
-                print(">", [hex(x) for x in breakpoints])
+                print([hex(x) for x in breakpoints])
             else:
                 print("No such breakpoint.")
         else:
