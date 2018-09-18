@@ -18,4 +18,5 @@ with open(filename, 'rb') as f:
     data.fromfile(f, filesize)
 
 memory.loadROM(data)
+memory.loadBootstrap()
 cpu.run()

@@ -37,7 +37,7 @@ toggle_ime = False # since the gameboy doesnt update IME immidietly we need help
 cycle = 0
 
 broken = False
-breakpoints = [0x00]
+breakpoints = [0x64]
 
 def run():
     global pc, sp, cycle, toggle_ime, ime, broken, breakpoint
@@ -824,7 +824,6 @@ def or_(a, b, cyc, pcinc):
     return newv
 
 def cp(a, b, cyc, pcinc):
-    print(hex(a), hex(b), cyc, pcinc)
     newv = a
     update(pcinc, cyc, zerocheck=(a - b), n=1, h=((~newv >> 4) & 1), c=int(a < b))
     return a
@@ -993,7 +992,7 @@ def jumprf(op):
 
 
 def call():
-    pushc(pc+1)
+    pushc(pc+3)
     addr = (m.read(pc+2) << 8) | m.read(pc+1)
     update(3, 24, newpc=addr)
 
@@ -1065,7 +1064,7 @@ def popc():
     lsbits = m.read(addr)
     msbits = m.read(addr + 1) << 8
     writeRegs(SP, readRegs(SP) + 2)
-    return msbits & lsbits
+    return msbits | lsbits
 
 def pop(regs):
     writeRegs(regs, popc())
@@ -1095,7 +1094,6 @@ def update(pcinc, cycles, zerocheck=None, n=-1, h=-1, c=-1, newpc=None):
     global pc, cycle
 
     if zerocheck != None:
-        # print(" > Zero check: ", zerocheck)
         zero(zerocheck)
 
     setFlags(n=n, h=h, c=c)
@@ -1104,8 +1102,6 @@ def update(pcinc, cycles, zerocheck=None, n=-1, h=-1, c=-1, newpc=None):
     else:
         pc = newpc
     cycle += cycles
-
-    # printState()
 
 def zero(value):
     if (value & 0xff) == 0:
