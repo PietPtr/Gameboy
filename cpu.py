@@ -2,6 +2,7 @@ import memory as m
 import ppu
 from memlocs import *
 import json
+import time
 
 A = 0
 AF = 0
@@ -40,9 +41,9 @@ toggle_ime = False # since the gameboy doesnt update IME immidietly we need help
 cycle = 0
 
 broken = False
-breakpoints = [0x00, 0xe0]
+breakpoints = []
 
-def run():
+def run(ppu):
     global pc, sp, cycle, toggle_ime, ime, broken, breakpoint
 
     while True:
@@ -56,8 +57,9 @@ def run():
 
         if breakpoints != [] and pc in breakpoints:
             broken = True
-            handleBroken()
 
+        if broken:
+            handleBroken()
 
         if op == 0x0:
             nop()
