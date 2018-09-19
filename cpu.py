@@ -1,4 +1,7 @@
 import memory as m
+import ppu
+from memlocs import *
+import json
 
 A = 0
 AF = 0
@@ -37,7 +40,7 @@ toggle_ime = False # since the gameboy doesnt update IME immidietly we need help
 cycle = 0
 
 broken = False
-breakpoints = [0x64]
+breakpoints = [0x00, 0xe0]
 
 def run():
     global pc, sp, cycle, toggle_ime, ime, broken, breakpoint
@@ -47,13 +50,14 @@ def run():
         # -- Decode instruction
 
         op = m.read(pc)
-        print("{0:#0{1}x}".format(pc, 6), "{0:#0{1}x}".format(op, 4))
 
         # if (cycle >> 22 & 1 == 1):
         #     break
 
         if breakpoints != [] and pc in breakpoints:
             broken = True
+            handleBroken()
+
 
         if op == 0x0:
             nop()
@@ -505,7 +509,7 @@ def run():
         elif op == 0xe1:
             pop(HL)
         elif op == 0xe2:
-            ldh_ia(readReg(C))
+            savetoIO()
         elif op == 0xe3:
             nofunction()
         elif op == 0xe4:
@@ -535,7 +539,7 @@ def run():
         elif op == 0xf1:
             pop(AF)
         elif op == 0xf2:
-            ldh_ai(readReg(C))
+            savetoIO()
         elif op == 0xf3:
             di()
         elif op == 0xf4:
@@ -566,9 +570,6 @@ def run():
             print(hex(op), "not implemented.")
             break
 
-        if broken == True:
-            handleBroken()
-
 
         # -- Handle interrupts
         if toggle_ime and op not in [0xfb, 0xf3]:
@@ -584,6 +585,9 @@ def run():
                     pc = intr_addrs[intr]
                     print("interrupt occured!")
                     input()
+
+        # PPU updates
+        ppu.update(cycle)
 
 
 # -------------
@@ -675,6 +679,16 @@ def ldh_ai(value):
     writeReg(A, m.read(addr))
 
     update(2, 12)
+
+def loadfromIO():
+    addr = 0xFF00 | readReg(C)
+    m.write(addr, readReg(A))
+    update(1, 8)
+
+def savetoIO():
+    addr = 0xFF00 | readReg(C)
+    writeReg(A, m.read(addr))
+    update(1, 8)
 
 def ldhlsp():
     writeRegs(SP, readRegs(HL))
@@ -970,7 +984,7 @@ def jumpto():
 
 def jumpr():
     rel = m.read(pc+1)
-    update(ones(rel) + 1, 12)
+    update(twos(rel) + 2, 12)
 
 def jumprf(op):
     assert op in [0x20, 0x30, 0x28, 0x38]
@@ -1202,40 +1216,45 @@ def ones(value):
     value = value & 0xff
     return value if value < 128 else value - 255
 
+def twos(value):
+    if (value >> 7) & 1 == 1:
+        value = value - (1 << 8)
+    return value
+
 # --- DEBUG ----------------------------------------------
 
 
 def printState():
+    print("{0:#0{1}x}".format(pc, 6), "{0:#0{1}x}".format(m.read(pc), 4))
     printRegs()
     printFlags()
     printLCD()
 
 def printFlags():
     f = readReg(F)
-    print("Flags: z=" + str((f >> 7) & 1), end=", ")
-    print("n=" + str((f >> 6) & 1), end=", ")
-    print("h=" + str((f >> 5) & 1), end=", ")
-    print("c=" + str((f >> 4) & 1), end=", ")
-    print("if=" + "{0:#0{1}x}".format(m.read(0xff0f), 4), end=", ")
-    print("ie=" + "{0:#0{1}x}".format(m.read(0xffff), 4), end=", ")
+    print("z=" + str((f >> 7) & 1), end="  ")
+    print("n=" + str((f >> 6) & 1), end="  ")
+    print("h=" + str((f >> 5) & 1), end="  ")
+    print("c=" + str((f >> 4) & 1), end="  ")
+    print("if=" + "{0:#0{1}x}".format(m.read(0xff0f), 4), end="  ")
+    print("ie=" + "{0:#0{1}x}".format(m.read(0xffff), 4), end="  ")
 
     print("ime=" + str(ime))
 
 def printRegs():
     names = "AFBCDEHL"
-    print("Registers: ", end="")
-    for i in range(0, L+1):
-        print(str(names[i]) + ":", "{0:#0{1}x}, ".format(regs[i], 4), end="")
-    print()
+    # print("Registers: ", end="")
+    # for i in range(0, L+1):
+    #     print(str(names[i]) + ":", "{0:#0{1}x}, ".format(regs[i], 4), end="")
+    # print()
 
-    print("Double registers: ", end="")
     names = ["", "BC", "DE", "HL", "SP"]
     for i in range(1, 5):
-        print(str(names[i]) + ":", "{0:#0{1}x}, ".format(readRegs(i*2), 6), end="")
+        print(str(names[i]) + "=" + "{0:#0{1}x}  ".format(readRegs(i*2), 6), end="")
     print()
 
 def printLCD():
-    print("LY=" + str(hex(m.read(0xff44))), "LCDC=" + str(hex(m.read(0xff41))))
+    print("LY=" + str(hex(m.read(0xff44))), " LCDC=" + str(hex(m.read(0xff41))))
 
 def printMemRange(start, end):
     values = m.memory[start:(end+1)]
@@ -1292,6 +1311,8 @@ def handleBroken():
         "run": cmd_run,
         "br": cmd_breakpoint,
         "breakpoint": cmd_breakpoint,
+        "c": cmd_cycles,
+        "cycles": cmd_cycles,
         "nothing": lambda args: True
     }
 
@@ -1336,6 +1357,10 @@ def cmd_stack(args):
     else:
         printStack()
 
+def cmd_cycles(args):
+    global cycle
+    print(str(cycle) + " cycles, (" + str(round(cycle / (4.1943 * 10 ** 6), 4)) + " seconds)")
+
 def cmd_run(args):
     global broken
     broken = False
@@ -1351,3 +1376,34 @@ def cmd_memory(args):
         printMemRange(start_addr, end_addr)
     else:
         print("Unsupported amount of arguments")
+
+def save_state(args):
+    state = {
+        "regs": regs,
+        "pc": pc,
+        "ime": ime,
+        "toggle_ime": toggle_ime,
+        "cycle": cycle,
+        "mem": m.memory
+    }
+
+    filename = "state.sav"
+    if len(args) > 0:
+        filename = " ".join(args)
+
+    with open(filename, 'w') as outfile:
+        json.dump(state, outfile)
+
+def load_state(args):
+    global regs, pc, ime, toggle_ime, cycle
+
+    filename = "state.sav"
+    if len(args) > 0:
+        filename = " ".join(args)
+
+    # state = {}
+    with open(filename) as outfile:
+        state = json.load(outfile)
+
+
+    return state
