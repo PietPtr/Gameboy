@@ -43,3 +43,24 @@ def reads(addr):
 def write(addr, value):
     # TODO: add write protection and stuff
     memory[addr] = value
+
+
+# --- OAM helpers ---------------
+class Sprite(object):
+    def __init__(self, data):
+        flags = data[3]
+
+        self.posx = data[0]
+        self.posy = data[1]
+        self.tileNum = data[2]
+        self.priority = flags >> 7 & 1
+        self.flipy = flags >> 6 & 1
+        self.flipx = flags >> 5 & 1
+        self.palette = flags >> 4 & 1
+
+def getSprite(number):
+    data = []
+    for i in range(4):
+        data.append(read(0xfe00 + number + i))
+
+    return Sprite(data)
