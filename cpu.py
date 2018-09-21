@@ -41,7 +41,7 @@ toggle_ime = False # since the gameboy doesnt update IME immidietly we need help
 cycle = 0
 
 broken = False
-breakpoints = [0x2d3]
+breakpoints = [0x100]
 
 start_time = time.time()
 
@@ -310,6 +310,8 @@ def run(ppu):
             handleBroken()
 
 
+        if (pc > 0x2d3):
+            print(hex(m.read(pc)), "at", hex(pc))
         op = m.read(pc)
         ops[op](pc)
 

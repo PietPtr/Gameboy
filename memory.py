@@ -1,4 +1,5 @@
 from array import array
+import random
 
 memory = [0 for x in range(0, 2**16)]
 lowerROM = [0 for x in range(0x100)]
@@ -44,6 +45,10 @@ def reads(addr):
 
 def write(addr, value):
     # TODO: add write protection and stuff
+
+    if addr < 0x8000 and addr != 0x2000:
+        print("no writing at", hex(addr))
+        raise Exception
 
     # 'turn off' the DMG ROM and load the source ROM code back in memory
     if addr == 0xff50 and value == 1:
