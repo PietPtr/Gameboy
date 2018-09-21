@@ -45,26 +45,263 @@ breakpoints = [0x2d3]
 
 start_time = time.time()
 
-# ops = {
-#     0x00: lambda: nop(),
-#     0x01: lambda: loadi16(BC),
-#     0x02: lambda: loadto((BC), A),
-#     0x03: lambda: inc16(BC),
-#     0x04: lambda: inc8(B),
-#     0x86: lambda: alu8(add, m.read(readRegs(HL)), 8)
-# }
+ops = {
+    0x00: lambda pc: nop(),
+    0x01: lambda pc: loadi16(BC),
+    0x02: lambda pc: loadto((BC), A),
+    0x03: lambda pc: inc16(BC),
+    0x04: lambda pc: inc8(B),
+    0x05: lambda pc: dec8(B),
+    0x06: lambda pc: loadi8(B),
+    0x07: lambda pc: rlca(),
+    0x08: lambda pc: loadi16(SP),
+    0x09: lambda pc: add16s(HL, BC),
+    0x0a: lambda pc: loadfrom(A, (BC)),
+    0x0b: lambda pc: dec16(BC),
+    0x0c: lambda pc: inc8(C),
+    0x0d: lambda pc: dec8(C),
+    0x0e: lambda pc: loadi8(C),
+    0x0f: lambda pc: rrca(),
+    0x11: lambda pc: loadi16(DE),
+    0x12: lambda pc: loadto((DE), A),
+    0x13: lambda pc: inc16(DE),
+    0x14: lambda pc: inc8(D),
+    0x15: lambda pc: dec8(D),
+    0x16: lambda pc: loadi8(D),
+    0x17: lambda pc: rla(),
+    0x18: lambda pc: jumpr(),
+    0x19: lambda pc: add16s(HL, DE),
+    0x1a: lambda pc: loadfrom(A, (DE)),
+    0x1b: lambda pc: dec16(DE),
+    0x1c: lambda pc: inc8(E),
+    0x1d: lambda pc: dec8(E),
+    0x1e: lambda pc: loadi8(E),
+    0x1f: lambda pc: rra(),
+    0x20: lambda pc: jumprf(m.read(pc)),
+    0x21: lambda pc: loadi16(HL),
+    0x22: lambda pc: loadtoc('+'),
+    0x23: lambda pc: inc16(HL),
+    0x24: lambda pc: inc8(H),
+    0x25: lambda pc: dec8(H),
+    0x26: lambda pc: loadi8(H),
+    0x28: lambda pc: jumprf(m.read(pc)),
+    0x29: lambda pc: add16s(HL, HL),
+    0x2a: lambda pc: loadfromc('+'),
+    0x2b: lambda pc: dec16(HL),
+    0x2c: lambda pc: inc8(L),
+    0x2d: lambda pc: dec8(L),
+    0x2e: lambda pc: loadi8(L),
+    0x2f: lambda pc: cpl(),
+    0x30: lambda pc: jumprf(m.read(pc)),
+    0x31: lambda pc: loadi16(SP),
+    0x32: lambda pc: loadtoc('-'),
+    0x33: lambda pc: inc16(SP),
+    0x34: lambda pc: incat((HL)),
+    0x35: lambda pc: decat((HL)),
+    0x36: lambda pc: loadiat((HL)),
+    0x37: lambda pc: update(1, 4, n=0, h=0, c=1),
+    0x38: lambda pc: jumprf(m.read(pc)),
+    0x39: lambda pc: add16s(HL, SP),
+    0x3a: lambda pc: loadfromc('-'),
+    0x3b: lambda pc: dec16(SP),
+    0x3c: lambda pc: inc8(A),
+    0x3d: lambda pc: dec8(A),
+    0x3e: lambda pc: loadi8(A),
+    0x3f: lambda pc: update(1, 4, n=0, h=0, c=int(not c())),
+    0x40: lambda pc: load(B, B),
+    0x41: lambda pc: load(B, C),
+    0x42: lambda pc: load(B, D),
+    0x43: lambda pc: load(B, E),
+    0x44: lambda pc: load(B, H),
+    0x45: lambda pc: load(B, L),
+    0x46: lambda pc: loadfrom(B, (HL)),
+    0x47: lambda pc: load(B, A),
+    0x48: lambda pc: load(C, B),
+    0x49: lambda pc: load(C, C),
+    0x4a: lambda pc: load(C, D),
+    0x4b: lambda pc: load(C, E),
+    0x4c: lambda pc: load(C, H),
+    0x4d: lambda pc: load(C, L),
+    0x4e: lambda pc: loadfrom(C, (HL)),
+    0x4f: lambda pc: load(C, A),
+    0x50: lambda pc: load(D, B),
+    0x51: lambda pc: load(D, C),
+    0x52: lambda pc: load(D, D),
+    0x53: lambda pc: load(D, E),
+    0x54: lambda pc: load(D, H),
+    0x55: lambda pc: load(D, L),
+    0x56: lambda pc: loadfrom(B, (HL)),
+    0x57: lambda pc: load(D, A),
+    0x58: lambda pc: load(E, B),
+    0x59: lambda pc: load(E, C),
+    0x5a: lambda pc: load(E, D),
+    0x5b: lambda pc: load(E, E),
+    0x5c: lambda pc: load(E, H),
+    0x5d: lambda pc: load(E, L),
+    0x5e: lambda pc: loadfrom(E, (HL)),
+    0x5f: lambda pc: load(E, A),
+    0x60: lambda pc: load(H, B),
+    0x61: lambda pc: load(H, C),
+    0x62: lambda pc: load(H, D),
+    0x63: lambda pc: load(H, E),
+    0x64: lambda pc: load(H, H),
+    0x65: lambda pc: load(H, L),
+    0x66: lambda pc: loadfrom(H, (HL)),
+    0x67: lambda pc: load(H, A),
+    0x68: lambda pc: load(L, B),
+    0x69: lambda pc: load(L, C),
+    0x6a: lambda pc: load(L, D),
+    0x6b: lambda pc: load(L, E),
+    0x6c: lambda pc: load(L, H),
+    0x6d: lambda pc: load(L, L),
+    0x6e: lambda pc: loadfrom(L, (HL)),
+    0x6f: lambda pc: load(L, A),
+    0x70: lambda pc: loadto((HL), B),
+    0x71: lambda pc: loadto((HL), C),
+    0x72: lambda pc: loadto((HL), D),
+    0x73: lambda pc: loadto((HL), E),
+    0x74: lambda pc: loadto((HL), H),
+    0x75: lambda pc: loadto((HL), L),
+    0x77: lambda pc: loadto((HL), A),
+    0x78: lambda pc: load(A, B),
+    0x79: lambda pc: load(A, C),
+    0x7a: lambda pc: load(A, D),
+    0x7b: lambda pc: load(A, E),
+    0x7c: lambda pc: load(A, H),
+    0x7d: lambda pc: load(A, L),
+    0x7e: lambda pc: loadfrom(A, (HL)),
+    0x7f: lambda pc: load(A, A),
+    0x80: lambda pc: alu8(add, readReg(B), 4),
+    0x81: lambda pc: alu8(add, readReg(C), 4),
+    0x82: lambda pc: alu8(add, readReg(D), 4),
+    0x83: lambda pc: alu8(add, readReg(E), 4),
+    0x84: lambda pc: alu8(add, readReg(H), 4),
+    0x85: lambda pc: alu8(add, readReg(L), 4),
+    0x86: lambda pc: alu8(add, m.read(readRegs(HL)), 8),
+    0x87: lambda pc: alu8(add, readReg(A), 4),
+    0x88: lambda pc: alu8(adc, readReg(B), 4),
+    0x89: lambda pc: alu8(adc, readReg(C), 4),
+    0x8a: lambda pc: alu8(adc, readReg(D), 4),
+    0x8b: lambda pc: alu8(adc, readReg(E), 4),
+    0x8c: lambda pc: alu8(adc, readReg(H), 4),
+    0x8d: lambda pc: alu8(adc, readReg(L), 4),
+    0x8e: lambda pc: alu8(adc, m.read(readRegs(HL)), 8),
+    0x8f: lambda pc: alu8(adc, readReg(A), 4),
+    0x90: lambda pc: alu8(sub, readReg(B), 4),
+    0x91: lambda pc: alu8(sub, readReg(C), 4),
+    0x92: lambda pc: alu8(sub, readReg(D), 4),
+    0x93: lambda pc: alu8(sub, readReg(E), 4),
+    0x94: lambda pc: alu8(sub, readReg(H), 4),
+    0x95: lambda pc: alu8(sub, readReg(L), 4),
+    0x96: lambda pc: alu8(sub, m.read(readRegs(HL)), 8),
+    0x97: lambda pc: alu8(sub, readReg(A), 4),
+    0x98: lambda pc: alu8(sbc, readReg(B), 4),
+    0x99: lambda pc: alu8(sbc, readReg(C), 4),
+    0x9a: lambda pc: alu8(sbc, readReg(D), 4),
+    0x9b: lambda pc: alu8(sbc, readReg(E), 4),
+    0x9c: lambda pc: alu8(sbc, readReg(H), 4),
+    0x9d: lambda pc: alu8(sbc, readReg(L), 4),
+    0x9e: lambda pc: alu8(sbc, m.read(readRegs(HL)), 8),
+    0x9f: lambda pc: alu8(sbc, readReg(A), 4),
+    0xa0: lambda pc: alu8(and_, readReg(B), 4),
+    0xa1: lambda pc: alu8(and_, readReg(C), 4),
+    0xa2: lambda pc: alu8(and_, readReg(D), 4),
+    0xa3: lambda pc: alu8(and_, readReg(E), 4),
+    0xa4: lambda pc: alu8(and_, readReg(H), 4),
+    0xa5: lambda pc: alu8(and_, readReg(L), 4),
+    0xa6: lambda pc: alu8(and_, m.read(readRegs(HL)), 8),
+    0xa7: lambda pc: alu8(and_, readReg(A), 4),
+    0xa8: lambda pc: alu8(xor, readReg(B), 4),
+    0xa9: lambda pc: alu8(xor, readReg(C), 4),
+    0xaa: lambda pc: alu8(xor, readReg(D), 4),
+    0xab: lambda pc: alu8(xor, readReg(E), 4),
+    0xac: lambda pc: alu8(xor, readReg(H), 4),
+    0xad: lambda pc: alu8(xor, readReg(L), 4),
+    0xae: lambda pc: alu8(xor, m.read(readRegs(HL)), 8),
+    0xaf: lambda pc: alu8(xor, readReg(A), 4),
+    0xb0: lambda pc: alu8(or_, readReg(B), 4),
+    0xb1: lambda pc: alu8(or_, readReg(C), 4),
+    0xb2: lambda pc: alu8(or_, readReg(D), 4),
+    0xb3: lambda pc: alu8(or_, readReg(E), 4),
+    0xb4: lambda pc: alu8(or_, readReg(H), 4),
+    0xb5: lambda pc: alu8(or_, readReg(L), 4),
+    0xb6: lambda pc: alu8(or_, m.read(readRegs(HL)), 8),
+    0xb7: lambda pc: alu8(or_, readReg(A), 4),
+    0xb8: lambda pc: alu8(cp, readReg(B), 4),
+    0xb9: lambda pc: alu8(cp, readReg(C), 4),
+    0xba: lambda pc: alu8(cp, readReg(D), 4),
+    0xbb: lambda pc: alu8(cp, readReg(E), 4),
+    0xbc: lambda pc: alu8(cp, readReg(H), 4),
+    0xbd: lambda pc: alu8(cp, readReg(L), 4),
+    0xbe: lambda pc: alu8(cp, m.read(readRegs(HL)), 8),
+    0xbf: lambda pc: alu8(cp, readReg(A), 4),
+    0xc0: lambda pc: retff(op),
+    0xc1: lambda pc: pop(BC),
+    0xc2: lambda pc: jumpff(op),
+    0xc3: lambda pc: jump(),
+    0xc4: lambda pc: callff(op),
+    0xc5: lambda pc: push(BC),
+    0xc6: lambda pc: alu8(sub, m.read(pc+1), 8, 2),
+    0xc7: lambda pc: rst(0x00),
+    0xc8: lambda pc: retff(),
+    0xc9: lambda pc: ret(),
+    0xca: lambda pc: jumpff(op),
+    0xcb: lambda pc: prefixcb(m.read(pc+1)),
+    0xcc: lambda pc: callff(op),
+    0xcd: lambda pc: call(),
+    0xce: lambda pc: alu(adc, m.read(pc+1), 8, 2),
+    0xcf: lambda pc: rst(0x08),
+    0xd0: lambda pc: retff(op),
+    0xd1: lambda pc: pop(DE),
+    0xd2: lambda pc: jumpff(op),
+    0xd3: lambda pc: nofunction(pc),
+    0xd4: lambda pc: callff(op),
+    0xd5: lambda pc: push(DE),
+    0xd6: lambda pc: alu8(sub, m.read(pc+1), 8, 2),
+    0xd7: lambda pc: rst(0x10),
+    0xd8: lambda pc: retff(op),
+    0xda: lambda pc: jumpff(op),
+    0xdb: lambda pc: nofunction(pc),
+    0xdc: lambda pc: callff(op),
+    0xdd: lambda pc: nofunction(pc),
+    0xde: lambda pc: alu8(sbc, m.read(pc+1), 8, 2),
+    0xdf: lambda pc: rst(0x18),
+    0xe0: lambda pc: ldh_ia(m.read(pc+1)),
+    0xe1: lambda pc: pop(HL),
+    0xe2: lambda pc: savetoIO(),
+    0xe3: lambda pc: nofunction(pc),
+    0xe4: lambda pc: nofunction(pc),
+    0xe5: lambda pc: push(HL),
+    0xe6: lambda pc: alu8(and_, m.read(pc+1), 8, 2),
+    0xe7: lambda pc: rst(0x20),
+    0xe9: lambda pc: jumpto(),
+    0xea: lambda pc: putabs(),
+    0xeb: lambda pc: nofunction(pc),
+    0xec: lambda pc: nofunction(pc),
+    0xed: lambda pc: nofunction(pc),
+    0xee: lambda pc: alu8(xor, m.read(pc+1), 8, 2),
+    0xef: lambda pc: rst(0x28),
+    0xf0: lambda pc: ldh_ai(m.read(pc+1)),
+    0xf1: lambda pc: pop(AF),
+    0xf2: lambda pc: savetoIO(),
+    0xf3: lambda pc: di(),
+    0xf4: lambda pc: nofunction,
+    0xf5: lambda pc: push(AF),
+    0xf6: lambda pc: alu8(or_, m.read(pc+1), 8, 2),
+    0xf7: lambda pc: rst(0x30),
+    0xf9: lambda pc: ldhlsp(),
+    0xfa: lambda pc: loadabs(),
+    0xfb: lambda pc: ei(),
+    0xfc: lambda pc: nofunction(pc),
+    0xfd: lambda pc: nofunction(pc),
+    0xfe: lambda pc: alu8(cp, m.read(pc+1), 8, 2),
+    0xff: lambda pc: rst(0x38)
+}
 
 def run(ppu):
     global pc, sp, cycle, toggle_ime, ime, broken, breakpoint
 
     while True:
-
-        # -- Decode instruction
-
-        op = m.read(pc)
-
-        # if (cycle >> 22 & 1 == 1):
-        #     break
 
         if breakpoints != [] and pc in breakpoints:
             broken = True
@@ -72,516 +309,9 @@ def run(ppu):
         if broken:
             handleBroken()
 
-        if op == 0x0:
-            nop()
-        elif op == 0x1:
-            loadi16(BC)
-        elif op == 0x2:
-            loadto((BC), A)
-        elif op == 0x3:
-            inc16(BC)
-        elif op == 0x4:
-            inc8(B)
-        elif op == 0x5:
-            dec8(B)
-        elif op == 0x6:
-            loadi8(B)
-        elif op == 0x7:
-            rlca()
-        elif op == 0x8:
-            loadi16(SP)
-        elif op == 0x9:
-            add16s(HL, BC)
-        elif op == 0xa:
-            loadfrom(A, (BC))
-        elif op == 0xb:
-            dec16(BC)
-        elif op == 0xc:
-            inc8(C)
-        elif op == 0xd:
-            dec8(C)
-        elif op == 0xe:
-            loadi8(C)
-        elif op == 0xf:
-            rrca()
 
-        elif op == 0x11:
-            loadi16(DE)
-        elif op == 0x12:
-            loadto((DE), A)
-        elif op == 0x13:
-            inc16(DE)
-        elif op == 0x14:
-            inc8(D)
-        elif op == 0x15:
-            dec8(D)
-        elif op == 0x16:
-            loadi8(D)
-        elif op == 0x17:
-            rla()
-        elif op == 0x18:
-            jumpr()
-        elif op == 0x19:
-            add16s(HL, DE)
-        elif op == 0x1a:
-            loadfrom(A, (DE))
-        elif op == 0x1b:
-            dec16(DE)
-        elif op == 0x1c:
-            inc8(E)
-        elif op == 0x1d:
-            dec8(E)
-        elif op == 0x1e:
-            loadi8(E)
-        elif op == 0x1f:
-            rra()
-        elif op == 0x20:
-            jumprf(m.read(pc))
-        elif op == 0x21:
-            loadi16(HL)
-        elif op == 0x22:
-            loadtoc('+')
-        elif op == 0x23:
-            inc16(HL)
-        elif op == 0x24:
-            inc8(H)
-        elif op == 0x25:
-            dec8(H)
-        elif op == 0x26:
-            loadi8(H)
-
-        elif op == 0x28:
-            jumprf(m.read(pc))
-        elif op == 0x29:
-            add16s(HL, HL)
-        elif op == 0x2a:
-            loadfromc('+')
-        elif op == 0x2b:
-            dec16(HL)
-        elif op == 0x2c:
-            inc8(L)
-        elif op == 0x2d:
-            dec8(L)
-        elif op == 0x2e:
-            loadi8(L)
-        elif op == 0x2f:
-            cpl()
-        elif op == 0x30:
-            jumprf(m.read(pc))
-        elif op == 0x31:
-            loadi16(SP)
-        elif op == 0x32:
-            loadtoc('-')
-        elif op == 0x33:
-            inc16(SP)
-        elif op == 0x34:
-            incat((HL))
-        elif op == 0x35:
-            decat((HL))
-        elif op == 0x36:
-            loadiat((HL))
-        elif op == 0x37:
-            update(1, 4, n=0, h=0, c=1)
-        elif op == 0x38:
-            jumprf(m.read(pc))
-        elif op == 0x39:
-            add16s(HL, SP)
-        elif op == 0x3a:
-            loadfromc('-')
-        elif op == 0x3b:
-            dec16(SP)
-        elif op == 0x3c:
-            inc8(A)
-        elif op == 0x3d:
-            dec8(A)
-        elif op == 0x3e:
-            loadi8(A)
-        elif op == 0x3f:
-            update(1, 4, n=0, h=0, c=int(not c()))
-        elif op == 0x40:
-            load(B, B)
-        elif op == 0x41:
-            load(B, C)
-        elif op == 0x42:
-            load(B, D)
-        elif op == 0x43:
-            load(B, E)
-        elif op == 0x44:
-            load(B, H)
-        elif op == 0x45:
-            load(B, L)
-        elif op == 0x46:
-            loadfrom(B, (HL))
-        elif op == 0x47:
-            load(B, A)
-        elif op == 0x48:
-            load(C, B)
-        elif op == 0x49:
-            load(C, C)
-        elif op == 0x4a:
-            load(C, D)
-        elif op == 0x4b:
-            load(C, E)
-        elif op == 0x4c:
-            load(C, H)
-        elif op == 0x4d:
-            load(C, L)
-        elif op == 0x4e:
-            loadfrom(C, (HL))
-        elif op == 0x4f:
-            load(C, A)
-        elif op == 0x50:
-            load(D, B)
-        elif op == 0x51:
-            load(D, C)
-        elif op == 0x52:
-            load(D, D)
-        elif op == 0x53:
-            load(D, E)
-        elif op == 0x54:
-            load(D, H)
-        elif op == 0x55:
-            load(D, L)
-        elif op == 0x56:
-            loadfrom(B, (HL))
-        elif op == 0x57:
-            load(D, A)
-        elif op == 0x58:
-            load(E, B)
-        elif op == 0x59:
-            load(E, C)
-        elif op == 0x5a:
-            load(E, D)
-        elif op == 0x5b:
-            load(E, E)
-        elif op == 0x5c:
-            load(E, H)
-        elif op == 0x5d:
-            load(E, L)
-        elif op == 0x5e:
-            loadfrom(E, (HL))
-        elif op == 0x5f:
-            load(E, A)
-        elif op == 0x60:
-            load(H, B)
-        elif op == 0x61:
-            load(H, C)
-        elif op == 0x62:
-            load(H, D)
-        elif op == 0x63:
-            load(H, E)
-        elif op == 0x64:
-            load(H, H)
-        elif op == 0x65:
-            load(H, L)
-        elif op == 0x66:
-            loadfrom(H, (HL))
-        elif op == 0x67:
-            load(H, A)
-        elif op == 0x68:
-            load(L, B)
-        elif op == 0x69:
-            load(L, C)
-        elif op == 0x6a:
-            load(L, D)
-        elif op == 0x6b:
-            load(L, E)
-        elif op == 0x6c:
-            load(L, H)
-        elif op == 0x6d:
-            load(L, L)
-        elif op == 0x6e:
-            loadfrom(L, (HL))
-        elif op == 0x6f:
-            load(L, A)
-        elif op == 0x70:
-            loadto((HL), B)
-        elif op == 0x71:
-            loadto((HL), C)
-        elif op == 0x72:
-            loadto((HL), D)
-        elif op == 0x73:
-            loadto((HL), E)
-        elif op == 0x74:
-            loadto((HL), H)
-        elif op == 0x75:
-            loadto((HL), L)
-        # elif op == 0x76:
-        # HALT
-        elif op == 0x77:
-            loadto((HL), A)
-        elif op == 0x78:
-            load(A, B)
-        elif op == 0x79:
-            load(A, C)
-        elif op == 0x7a:
-            load(A, D)
-        elif op == 0x7b:
-            load(A, E)
-        elif op == 0x7c:
-            load(A, H)
-        elif op == 0x7d:
-            load(A, L)
-        elif op == 0x7e:
-            loadfrom(A, (HL))
-        elif op == 0x7f:
-            load(A, A)
-        elif op == 0x80:
-            alu8(add, readReg(B), 4)
-        elif op == 0x81:
-            alu8(add, readReg(C), 4)
-        elif op == 0x82:
-            alu8(add, readReg(D), 4)
-        elif op == 0x83:
-            alu8(add, readReg(E), 4)
-        elif op == 0x84:
-            alu8(add, readReg(H), 4)
-        elif op == 0x85:
-            alu8(add, readReg(L), 4)
-        elif op == 0x86:
-            alu8(add, m.read(readRegs(HL)), 8)
-        elif op == 0x87:
-            alu8(add, readReg(A), 4)
-        elif op == 0x88:
-            alu8(adc, readReg(B), 4)
-        elif op == 0x89:
-            alu8(adc, readReg(C), 4)
-        elif op == 0x8a:
-            alu8(adc, readReg(D), 4)
-        elif op == 0x8b:
-            alu8(adc, readReg(E), 4)
-        elif op == 0x8c:
-            alu8(adc, readReg(H), 4)
-        elif op == 0x8d:
-            alu8(adc, readReg(L), 4)
-        elif op == 0x8e:
-            alu8(adc, m.read(readRegs(HL)), 8)
-        elif op == 0x8f:
-            alu8(adc, readReg(A), 4)
-        elif op == 0x90:
-            alu8(sub, readReg(B), 4)
-        elif op == 0x91:
-            alu8(sub, readReg(C), 4)
-        elif op == 0x92:
-            alu8(sub, readReg(D), 4)
-        elif op == 0x93:
-            alu8(sub, readReg(E), 4)
-        elif op == 0x94:
-            alu8(sub, readReg(H), 4)
-        elif op == 0x95:
-            alu8(sub, readReg(L), 4)
-        elif op == 0x96:
-            alu8(sub, m.read(readRegs(HL)), 8)
-        elif op == 0x97:
-            alu8(sub, readReg(A), 4)
-        elif op == 0x98:
-            alu8(sbc, readReg(B), 4)
-        elif op == 0x99:
-            alu8(sbc, readReg(C), 4)
-        elif op == 0x9a:
-            alu8(sbc, readReg(D), 4)
-        elif op == 0x9b:
-            alu8(sbc, readReg(E), 4)
-        elif op == 0x9c:
-            alu8(sbc, readReg(H), 4)
-        elif op == 0x9d:
-            alu8(sbc, readReg(L), 4)
-        elif op == 0x9e:
-            alu8(sbc, m.read(readRegs(HL)), 8)
-        elif op == 0x9f:
-            alu8(sbc, readReg(A), 4)
-        elif op == 0xa0:
-            alu8(and_, readReg(B), 4)
-        elif op == 0xa1:
-            alu8(and_, readReg(C), 4)
-        elif op == 0xa2:
-            alu8(and_, readReg(D), 4)
-        elif op == 0xa3:
-            alu8(and_, readReg(E), 4)
-        elif op == 0xa4:
-            alu8(and_, readReg(H), 4)
-        elif op == 0xa5:
-            alu8(and_, readReg(L), 4)
-        elif op == 0xa6:
-            alu8(and_, m.read(readRegs(HL)), 8)
-        elif op == 0xa7:
-            alu8(and_, readReg(A), 4)
-        elif op == 0xa8:
-            alu8(xor, readReg(B), 4)
-        elif op == 0xa9:
-            alu8(xor, readReg(C), 4)
-        elif op == 0xaa:
-            alu8(xor, readReg(D), 4)
-        elif op == 0xab:
-            alu8(xor, readReg(E), 4)
-        elif op == 0xac:
-            alu8(xor, readReg(H), 4)
-        elif op == 0xad:
-            alu8(xor, readReg(L), 4)
-        elif op == 0xae:
-            alu8(xor, m.read(readRegs(HL)), 8)
-        elif op == 0xaf:
-            alu8(xor, readReg(A), 4)
-        elif op == 0xb0:
-            alu8(or_, readReg(B), 4)
-        elif op == 0xb1:
-            alu8(or_, readReg(C), 4)
-        elif op == 0xb2:
-            alu8(or_, readReg(D), 4)
-        elif op == 0xb3:
-            alu8(or_, readReg(E), 4)
-        elif op == 0xb4:
-            alu8(or_, readReg(H), 4)
-        elif op == 0xb5:
-            alu8(or_, readReg(L), 4)
-        elif op == 0xb6:
-            alu8(or_, m.read(readRegs(HL)), 8)
-        elif op == 0xb7:
-            alu8(or_, readReg(A), 4)
-        elif op == 0xb8:
-            alu8(cp, readReg(B), 4)
-        elif op == 0xb9:
-            alu8(cp, readReg(C), 4)
-        elif op == 0xba:
-            alu8(cp, readReg(D), 4)
-        elif op == 0xbb:
-            alu8(cp, readReg(E), 4)
-        elif op == 0xbc:
-            alu8(cp, readReg(H), 4)
-        elif op == 0xbd:
-            alu8(cp, readReg(L), 4)
-        elif op == 0xbe:
-            alu8(cp, m.read(readRegs(HL)), 8)
-        elif op == 0xbf:
-            alu8(cp, readReg(A), 4)
-        elif op == 0xc0:
-            retff(op)
-        elif op == 0xc1:
-            pop(BC)
-        elif op == 0xc2:
-            jumpff(op)
-        elif op == 0xc3:
-            jump()
-        elif op == 0xc4:
-            callff(op)
-        elif op == 0xc5:
-            push(BC)
-        elif op == 0xc6:
-            alu8(sub, m.read(pc+1), 8, 2)
-        elif op == 0xc7:
-            rst(0x00)
-        elif op == 0xc8:
-            retff()
-        elif op == 0xc9:
-            ret()
-        elif op == 0xca:
-            jumpff(op)
-        elif op == 0xcb:
-            prefixcb(m.read(pc+1))
-        elif op == 0xcc:
-            callff(op)
-        elif op == 0xcd:
-            call()
-        elif op == 0xce:
-            alu(adc, m.read(pc+1), 8, 2)
-        elif op == 0xcf:
-            rst(0x08)
-        elif op == 0xd0:
-            retff(op)
-        elif op == 0xd1:
-            pop(DE)
-        elif op == 0xd2:
-            jumpff(op)
-        elif op == 0xd3:
-            nofunction(pc)
-        elif op == 0xd4:
-            callff(op)
-        elif op == 0xd5:
-            push(DE)
-        elif op == 0xd6:
-            alu8(sub, m.read(pc+1), 8, 2)
-        elif op == 0xd7:
-            rst(0x10)
-        elif op == 0xd8:
-            retff(op)
-
-        elif op == 0xda:
-            jumpff(op)
-        elif op == 0xdb:
-            nofunction(pc)
-        elif op == 0xdc:
-            callff(op)
-        elif op == 0xdd:
-            nofunction(pc)
-        elif op == 0xde:
-            alu8(sbc, m.read(pc+1), 8, 2)
-        elif op == 0xdf:
-            rst(0x18)
-        elif op == 0xe0:
-            ldh_ia(m.read(pc+1))
-        elif op == 0xe1:
-            pop(HL)
-        elif op == 0xe2:
-            savetoIO()
-        elif op == 0xe3:
-            nofunction(pc)
-        elif op == 0xe4:
-            nofunction(pc);
-        elif op == 0xe5:
-            push(HL)
-        elif op == 0xe6:
-            alu8(and_, m.read(pc+1), 8, 2)
-        elif op == 0xe7:
-            rst(0x20)
-        elif op == 0xe9:
-            jumpto()
-        elif op == 0xea:
-            putabs()
-        elif op == 0xeb:
-            nofunction(pc)
-        elif op == 0xec:
-            nofunction(pc)
-        elif op == 0xed:
-            nofunction(pc)
-        elif op == 0xee:
-            alu8(xor, m.read(pc+1), 8, 2)
-        elif op == 0xef:
-            rst(0x28)
-        elif op == 0xf0:
-            ldh_ai(m.read(pc+1))
-        elif op == 0xf1:
-            pop(AF)
-        elif op == 0xf2:
-            savetoIO()
-        elif op == 0xf3:
-            di()
-        elif op == 0xf4:
-            nofunction
-        elif op == 0xf5:
-            push(AF)
-        elif op == 0xf6:
-            alu8(or_, m.read(pc+1), 8, 2)
-        elif op == 0xf7:
-            rst(0x30)
-
-        elif op == 0xf9:
-            ldhlsp()
-        elif op == 0xfa:
-            loadabs()
-        elif op == 0xfb:
-            ei()
-        elif op == 0xfc:
-            nofunction(pc)
-        elif op == 0xfd:
-            nofunction(pc)
-        elif op == 0xfe:
-            alu8(cp, m.read(pc+1), 8, 2)
-        elif op == 0xff:
-            rst(0x38)
-
-        else:
-            print(hex(op), "not implemented.")
-            break
+        op = m.read(pc)
+        ops[op](pc)
 
 
         # -- Handle interrupts
