@@ -41,7 +41,7 @@ toggle_ime = False # since the gameboy doesnt update IME immidietly we need help
 cycle = 0
 
 broken = False
-breakpoints = []
+breakpoints = [0xfe]
 
 def run(ppu):
     global pc, sp, cycle, toggle_ime, ime, broken, breakpoint
@@ -1250,8 +1250,8 @@ def printRegs():
     #     print(str(names[i]) + ":", "{0:#0{1}x}, ".format(regs[i], 4), end="")
     # print()
 
-    names = ["", "BC", "DE", "HL", "SP"]
-    for i in range(1, 5):
+    names = ["AF", "BC", "DE", "HL", "SP"]
+    for i in range(0, 5):
         print(str(names[i]) + "=" + "{0:#0{1}x}  ".format(readRegs(i*2), 6), end="")
     print()
 

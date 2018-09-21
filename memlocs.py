@@ -6,5 +6,6 @@ SCY         = 0xff42
 SCX         = 0xff43
 LY          = 0xff44
 LYC         = 0xff45
+BGP         = 0xff47
 WY          = 0xff4a
 WX          = 0xff4b

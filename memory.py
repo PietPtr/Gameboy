@@ -1,6 +1,7 @@
 from array import array
 
 memory = [0 for x in range(0, 2**16)]
+lowerROM = [0 for x in range(0x100)]
 
 def loadBootstrap():
     bootstrap = [49, 254, 255, 175, 33, 255, 159, 50, 203, 124, 32, 251, 33, 38, 255, 14, 17, \
@@ -26,12 +27,13 @@ def loadROM(data):
     # TODO: add switching ROM banks
     i = 0
     for b in data:
+        if i < 0xff:
+            lowerROM[i] = b
         memory[i] = b
         i += 1
 
 
 def read(addr):
-    # TODO: add memory mapped crap like IO
     addr = addr & 0xFFFF
     return memory[addr]
 
@@ -42,6 +44,15 @@ def reads(addr):
 
 def write(addr, value):
     # TODO: add write protection and stuff
+
+    # 'turn off' the DMG ROM and load the source ROM code back in memory
+    if addr == 0xff50 and value == 1:
+        print("daar gaan we")
+        for i in range(0x100):
+            memory[i] = lowerROM[i]
+    elif addr == 0xff47:
+        print("write to 0xff47:", bin(value))
+
     memory[addr] = value
 
 

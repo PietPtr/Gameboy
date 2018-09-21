@@ -26,6 +26,7 @@ def render(queue):
         if lcd == None:
             continue
 
+
         screen.fill(black)
 
         screen.blit(generate_screen(lcd), (0, 0))
@@ -35,13 +36,16 @@ def render(queue):
 
 def generate_screen(lcd):
     pixelmap = {
-        0b00: black,
-        0b01: lightgray,
-        0b10: darkgray,
-        0b11: white
+        0b00: white,
+        0b01: darkgray,
+        0b10: lightgray,
+        0b11: black
     }
 
     surface = pygame.Surface((160, 144))
+
+
+    # print("renderer", lcd[10][10])
 
     for x in range(160):
         for y in range(144):
