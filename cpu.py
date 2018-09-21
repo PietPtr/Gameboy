@@ -41,7 +41,18 @@ toggle_ime = False # since the gameboy doesnt update IME immidietly we need help
 cycle = 0
 
 broken = False
-breakpoints = [0xfe]
+breakpoints = [0x2d3]
+
+start_time = time.time()
+
+# ops = {
+#     0x00: lambda: nop(),
+#     0x01: lambda: loadi16(BC),
+#     0x02: lambda: loadto((BC), A),
+#     0x03: lambda: inc16(BC),
+#     0x04: lambda: inc8(B),
+#     0x86: lambda: alu8(add, m.read(readRegs(HL)), 8)
+# }
 
 def run(ppu):
     global pc, sp, cycle, toggle_ime, ime, broken, breakpoint
@@ -482,7 +493,7 @@ def run(ppu):
         elif op == 0xd2:
             jumpff(op)
         elif op == 0xd3:
-            nofunction()
+            nofunction(pc)
         elif op == 0xd4:
             callff(op)
         elif op == 0xd5:
@@ -497,11 +508,11 @@ def run(ppu):
         elif op == 0xda:
             jumpff(op)
         elif op == 0xdb:
-            nofunction()
+            nofunction(pc)
         elif op == 0xdc:
             callff(op)
         elif op == 0xdd:
-            nofunction()
+            nofunction(pc)
         elif op == 0xde:
             alu8(sbc, m.read(pc+1), 8, 2)
         elif op == 0xdf:
@@ -513,9 +524,9 @@ def run(ppu):
         elif op == 0xe2:
             savetoIO()
         elif op == 0xe3:
-            nofunction()
+            nofunction(pc)
         elif op == 0xe4:
-            nofunction();
+            nofunction(pc);
         elif op == 0xe5:
             push(HL)
         elif op == 0xe6:
@@ -527,11 +538,11 @@ def run(ppu):
         elif op == 0xea:
             putabs()
         elif op == 0xeb:
-            nofunction()
+            nofunction(pc)
         elif op == 0xec:
-            nofunction()
+            nofunction(pc)
         elif op == 0xed:
-            nofunction()
+            nofunction(pc)
         elif op == 0xee:
             alu8(xor, m.read(pc+1), 8, 2)
         elif op == 0xef:
@@ -560,9 +571,9 @@ def run(ppu):
         elif op == 0xfb:
             ei()
         elif op == 0xfc:
-            nofunction()
+            nofunction(pc)
         elif op == 0xfd:
-            nofunction()
+            nofunction(pc)
         elif op == 0xfe:
             alu8(cp, m.read(pc+1), 8, 2)
         elif op == 0xff:
@@ -1087,8 +1098,8 @@ def pop(regs):
 
     update(1, 12)
 
-def nofunction():
-    raise ValueError("Instruction does not exist.")
+def nofunction(pc):
+    raise ValueError("Instruction does not exist at pc=" + hex(pc), "op=" + hex(m.read(pc)))
 
 def ei():
     if ime == 0:
@@ -1301,7 +1312,8 @@ default_debug_arguments = []
 
 def handleBroken():
     global default_debug_command
-    global default_debug_arguments
+    global default_debug_arguments, start_time
+    print(time.time() - start_time)
     printState()
 
     commands = {
@@ -1406,6 +1418,5 @@ def load_state(args):
     # state = {}
     with open(filename) as outfile:
         state = json.load(outfile)
-
 
     return state

@@ -18,10 +18,11 @@ class PPU(object):
 
             self.draw_line(line)
 
-            try:
-                self.queue.get_nowait()
-            except Exception:
-                self.queue.put(self.lcd)
+            if line == 153:
+                try:
+                    self.queue.get_nowait()
+                except Exception:
+                    self.queue.put(self.lcd)
 
 
     def draw_line(self, line):

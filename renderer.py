@@ -8,7 +8,7 @@ white = 108, 124, 67
 def render(queue):
     pygame.init()
 
-    size = width, height = 160, 144
+    size = width, height = 160*3, 144*3
 
     screen = pygame.display.set_mode(size)
     screen.fill(black)
@@ -29,7 +29,7 @@ def render(queue):
 
         screen.fill(black)
 
-        screen.blit(generate_screen(lcd), (0, 0))
+        screen.blit(pygame.transform.scale(generate_screen(lcd), (160*3, 144*3)), (0, 0))
 
         pygame.display.flip()
 

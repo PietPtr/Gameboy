@@ -6,8 +6,11 @@ import renderer
 from ppu import PPU
 from threading import Thread
 from queue import Queue
+import time
 
 data = array("B")
+
+print(time.time())
 
 if len(sys.argv) < 2:
     print("pls give rom name")

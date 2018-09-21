@@ -47,11 +47,10 @@ def write(addr, value):
 
     # 'turn off' the DMG ROM and load the source ROM code back in memory
     if addr == 0xff50 and value == 1:
-        print("daar gaan we")
         for i in range(0x100):
             memory[i] = lowerROM[i]
-    elif addr == 0xff47:
-        print("write to 0xff47:", bin(value))
+    elif addr == 0xa000:
+        print("write to 0xa0000:", bin(value))
 
     memory[addr] = value
 
